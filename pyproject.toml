@@ -1,0 +1,27 @@
+[project]
+name = "tos-mvp"
+version = "0.1.0"
+description = "MVP бота для подачи инициатив жителей в мессенджере MAX"
+requires-python = ">=3.11"
+dependencies = [
+    "maxapi @ git+https://github.com/max-messenger/max-botapi-python.git",
+    "sqlalchemy[asyncio]>=2.0",
+    "asyncpg>=0.29",
+    "python-dotenv>=1.0",
+    "pydantic-settings>=2.0",
+    "alembic>=1.13",
+]
+
+[project.optional-dependencies]
+webhook = ["fastapi>=0.100", "uvicorn>=0.23"]
+
+[tool.uv]
+dev-dependencies = ["pytest>=7.4", "ruff>=0.3"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
