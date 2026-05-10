@@ -53,7 +53,7 @@ async def handle_idea_step(event: MessageCreated, db: AsyncSession, user_states:
         kb = make_category_keyboard()
         await event.message.answer(
             "🏷️ Выберите **категорию**:",
-            keyboard=kb.as_markup()
+            keyboard=kb.pack()
         )
 
     elif step == IdeaStates.WAITING_LOCATION.value:
@@ -77,7 +77,7 @@ async def handle_idea_step(event: MessageCreated, db: AsyncSession, user_states:
         await event.message.answer(
             preview,
             parse_mode="Markdown",
-            keyboard=kb.as_markup()
+            keyboard=kb.pack()
         )
 
 

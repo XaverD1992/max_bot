@@ -1,39 +1,39 @@
-from maxapi.types import InlineKeyboardBuilder, CallbackButton
+from maxapi.types import ButtonsPayload, CallbackButton
 
-def make_moderation_keyboard(initiative_id: int) -> InlineKeyboardBuilder:
+def make_moderation_keyboard(initiative_id: int) -> ButtonsPayload:
     """Inline-клавиатура для модератора: ✅ Одобрить / ❌ Отклонить"""
-    builder = InlineKeyboardBuilder()
-    builder.row(
-        CallbackButton(text="✅ Одобрить", payload=f"mod_approve:{initiative_id}"),
-        CallbackButton(text="❌ Отклонить", payload=f"mod_reject:{initiative_id}")
-    )
-    return builder
+    buttons = [
+        [
+            CallbackButton(text="✅ Одобрить", payload=f"mod_approve:{initiative_id}"),
+            CallbackButton(text="❌ Отклонить", payload=f"mod_reject:{initiative_id}")
+        ]
+    ]
+    return ButtonsPayload(buttons=buttons)
 
-def make_category_keyboard() -> InlineKeyboardBuilder:
+def make_category_keyboard() -> ButtonsPayload:
     """Клавиатура с категориями для выбора"""
-    builder = InlineKeyboardBuilder()
     categories = ["дороги", "благоустройство", "детские площадки", "освещение", "ЖКХ"]
-    
-    # По 2 кнопки в ряду
+    buttons = []
     for i in range(0, len(categories), 2):
-        row_buttons = []
+        row = []
         for cat in categories[i:i+2]:
-            row_buttons.append(CallbackButton(text=cat, payload=f"cat_select:{cat}"))
-        builder.row(*row_buttons)
-    
-    return builder
+            row.append(CallbackButton(text=cat, payload=f"cat_select:{cat}"))
+        buttons.append(row)
+    return ButtonsPayload(buttons=buttons)
 
-def make_confirm_keyboard() -> InlineKeyboardBuilder:
+def make_confirm_keyboard() -> ButtonsPayload:
     """Кнопки подтверждения/отмены"""
-    builder = InlineKeyboardBuilder()
-    builder.row(
-        CallbackButton(text="✅ Да, отправить", payload="idea_confirm:yes"),
-        CallbackButton(text="❌ Нет, отменить", payload="idea_confirm:no")
-    )
-    return builder
+    buttons = [
+        [
+            CallbackButton(text="✅ Да, отправить", payload="idea_confirm:yes"),
+            CallbackButton(text="❌ Нет, отменить", payload="idea_confirm:no")
+        ]
+    ]
+    return ButtonsPayload(buttons=buttons)
 
-def make_back_keyboard() -> InlineKeyboardBuilder:
+def make_back_keyboard() -> ButtonsPayload:
     """Кнопка «Назад»"""
-    builder = InlineKeyboardBuilder()
-    builder.row(CallbackButton(text="⬅️ Назад", payload="cmd_back"))
-    return builder
+    buttons = [
+        [CallbackButton(text="⬅️ Назад", payload="cmd_back")]
+    ]
+    return ButtonsPayload(buttons=buttons)

@@ -1,4 +1,4 @@
-from maxapi.types import MessageCallback, InlineKeyboardBuilder, CallbackButton
+from maxapi.types import MessageCallback, ButtonsPayload, CallbackButton
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.logging_config import logger
 from src.database.crud import (

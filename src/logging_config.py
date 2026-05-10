@@ -4,7 +4,10 @@ from src.config import settings
 
 def setup_logging():
     level = getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO)
-    
+
+    # Настройка кодировки для stdout
+    sys.stdout.reconfigure(encoding='utf-8')
+
     logging.basicConfig(
         level=level,
         format="%(asctime)s | %(levelname)-8s | %(name)s:%(lineno)d | %(message)s",
