@@ -52,7 +52,7 @@ async def handle_start(event: MessageCreated, db: AsyncSession, user_states: dic
 async def handle_phone_input(event: MessageCreated, db: AsyncSession, user_states: dict):
     """Обработка ввода номера телефона"""
     chat_id = event.message.recipient.chat_id
-    text = event.message.text.strip()
+    text = event.message.body.text.strip()
 
     if chat_id not in user_states or user_states[chat_id].get("step") != "waiting_phone":
         return
