@@ -11,7 +11,7 @@ from src.bot.keyboards import make_category_keyboard, make_confirm_keyboard
 
 async def handle_idea_start(event: MessageCreated, db: AsyncSession, user_states: dict):
     """Запуск диалога подачи инициативы"""
-    chat_id = event.message.chat_id
+    chat_id = event.message.recipient.chat_id
     
     # Инициализируем состояние
     user_states[chat_id] = {"step": IdeaStates.WAITING_TITLE.value}
@@ -23,7 +23,7 @@ async def handle_idea_start(event: MessageCreated, db: AsyncSession, user_states
 
 async def handle_idea_step(event: MessageCreated, db: AsyncSession, user_states: dict):
     """Обработка текстовых шагов диалога"""
-    chat_id = event.message.chat_id
+    chat_id = event.message.recipient.chat_id
     text = event.message.text.strip()
 
     if chat_id not in user_states:
@@ -83,7 +83,7 @@ async def handle_idea_step(event: MessageCreated, db: AsyncSession, user_states:
 
 async def handle_after_category(event: MessageCreated, db: AsyncSession, user_states: dict):
     """Вызывается из callback.py после выбора категории кнопкой"""
-    chat_id = event.message.chat_id
+    chat_id = event.message.recipient.chat_id
     if chat_id not in user_states or user_states[chat_id].get("step") != IdeaStates.WAITING_CATEGORY.value:
         return
     

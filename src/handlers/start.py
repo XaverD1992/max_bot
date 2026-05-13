@@ -11,7 +11,7 @@ from src.database.crud import get_or_create_user
 
 async def handle_start(event: MessageCreated, db: AsyncSession, user_states: dict):
     """Начало диалога: проверка авторизации, запрос телефона"""
-    chat_id = event.message.chat_id
+    chat_id = event.message.recipient.chat_id
     user_obj = getattr(event.message, "from_user", None) or getattr(event.message, "user", None)
     name = getattr(user_obj, "first_name", "Пользователь") if user_obj else "Пользователь"
 
@@ -40,7 +40,7 @@ async def handle_start(event: MessageCreated, db: AsyncSession, user_states: dic
 
 async def handle_phone_input(event: MessageCreated, db: AsyncSession, user_states: dict):
     """Обработка ввода номера телефона"""
-    chat_id = event.message.chat_id
+    chat_id = event.message.recipient.chat_id
     text = event.message.text.strip()
 
     if chat_id not in user_states or user_states[chat_id].get("step") != "waiting_phone":

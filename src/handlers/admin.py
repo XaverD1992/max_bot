@@ -7,7 +7,7 @@ from src.models.user import UserRole
 
 async def handle_set_role(event: MessageCreated, db: AsyncSession):
     """Админ-команда: /set_role @username moderator|admin|resident"""
-    chat_id = event.message.chat_id
+    chat_id = event.message.recipient.chat_id
     
     # Проверка: только админы из ADMIN_USER_IDS
     if chat_id not in settings.ADMIN_USER_IDS:

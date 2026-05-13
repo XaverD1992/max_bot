@@ -41,7 +41,7 @@ def register_handlers(dp: Dispatcher):
     # === Обработка ввода телефона (после /start) ===
     @dp.message_created()
     async def on_phone_input(event: MessageCreated):
-        chat_id = event.message.chat_id
+        chat_id = event.message.recipient.chat_id
         if chat_id in user_states and user_states[chat_id].get("step") == "waiting_phone":
             async with async_session_factory() as db:
                 await start.handle_phone_input(event, db, user_states)
@@ -55,7 +55,7 @@ def register_handlers(dp: Dispatcher):
     # === Шаги диалога подачи инициативы ===
     @dp.message_created()
     async def on_idea_step(event: MessageCreated):
-        chat_id = event.message.chat_id
+        chat_id = event.message.recipient.chat_id
         if chat_id in user_states:
             step = user_states[chat_id].get("step")
             if step in ["waiting_title", "waiting_description", "waiting_location"]:

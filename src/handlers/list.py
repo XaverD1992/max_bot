@@ -6,7 +6,7 @@ from src.models.initiative import InitiativeCategory
 
 async def handle_list(event: MessageCreated, db: AsyncSession):
     """Обработка команды /list — показ одобренных инициатив"""
-    chat_id = event.message.chat_id
+    chat_id = event.message.recipient.chat_id
     text = event.message.text.strip()
     
     # Парсинг категории из команды: /list дороги

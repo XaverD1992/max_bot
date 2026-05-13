@@ -561,7 +561,7 @@ wheels = [
 [[package]]
 name = "maxapi"
 version = "0.9.4"
-source = { git = "https://github.com/max-messenger/max-botapi-python.git#4a286baa06d38f2db9f7244d94f89508743f8fee" }
+source = { git = "https://github.com/max-messenger/max-botapi-python.git?rev=main#4a286baa06d38f2db9f7244d94f89508743f8fee" }
 dependencies = [
     { name = "aiofiles" },
     { name = "aiohttp" },
@@ -1116,7 +1116,7 @@ requires-dist = [
     { name = "alembic", specifier = ">=1.13" },
     { name = "asyncpg", specifier = ">=0.29" },
     { name = "fastapi", marker = "extra == 'webhook'", specifier = ">=0.100" },
-    { name = "maxapi", git = "https://github.com/max-messenger/max-botapi-python.git" },
+    { name = "maxapi", git = "https://github.com/max-messenger/max-botapi-python.git?rev=main" },
     { name = "pydantic-settings", specifier = ">=2.0" },
     { name = "python-dotenv", specifier = ">=1.0" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0" },

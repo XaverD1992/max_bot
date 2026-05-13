@@ -12,7 +12,7 @@ from src.models.initiative import InitiativeStatus
 
 async def handle_vote(event: MessageCreated, db: AsyncSession):
     """Обработка команды /vote [id] — голосование за инициативу"""
-    chat_id = event.message.chat_id
+    chat_id = event.message.recipient.chat_id
     text = event.message.text.strip()
     
     # Парсим номер инициативы: /vote 123

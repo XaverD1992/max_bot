@@ -12,7 +12,7 @@ from src.bot.states import IdeaStates
 
 async def handle_callback(callback: MessageCallback, db: AsyncSession, user_states: dict):
     """Единый обработчик всех callback-запросов"""
-    chat_id = callback.chat_id
+    chat_id = callback.message.recipient.chat_id
     payload = callback.payload
     
     if not payload:
@@ -47,10 +47,10 @@ async def handle_callback(callback: MessageCallback, db: AsyncSession, user_stat
         await callback.answer()
         await callback.message.answer("↩️ Возврат в главное меню.\nДоступные команды: /idea, /list, /vote")
 
-async def _handle_moderation_action(callback: MessageCallback, db: AsyncSession, 
-                                  initiative_id: int, approve: bool):
+async def _handle_moderation_action(callback: MessageCallback, db: AsyncSession,
+                                   initiative_id: int, approve: bool):
     """Обработка решения модератора"""
-    chat_id = callback.chat_id
+    chat_id = callback.message.recipient.chat_id
     user = await get_user_by_id(db, chat_id)
     
     if user.role not in [UserRole.MODERATOR, UserRole.ADMIN]:
@@ -77,9 +77,9 @@ async def _handle_moderation_action(callback: MessageCallback, db: AsyncSession,
         pass
 
 async def _handle_category_selected(callback: MessageCallback, db: AsyncSession,
-                                  user_states: dict, category_name: str):
+                                   user_states: dict, category_name: str):
     """Обработка выбора категории в диалоге подачи инициативы"""
-    chat_id = callback.chat_id
+    chat_id = callback.message.recipient.chat_id
     if chat_id not in user_states or user_states[chat_id].get("step") != IdeaStates.WAITING_CATEGORY.value:
         await callback.answer()
         return
@@ -90,9 +90,9 @@ async def _handle_category_selected(callback: MessageCallback, db: AsyncSession,
     await callback.message.answer("📍 Укажите **местоположение** (адрес, ориентир):", parse_mode="Markdown")
 
 async def _handle_idea_confirm(callback: MessageCallback, db: AsyncSession,
-                              user_states: dict, action: str):
+                               user_states: dict, action: str):
     """Финальное подтверждение/отмена подачи инициативы"""
-    chat_id = callback.chat_id
+    chat_id = callback.message.recipient.chat_id
     if chat_id not in user_states or user_states[chat_id].get("step") != IdeaStates.CONFIRM_SUBMIT.value:
         await callback.answer()
         return
