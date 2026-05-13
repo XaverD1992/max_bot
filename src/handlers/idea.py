@@ -24,7 +24,7 @@ async def handle_idea_start(event: MessageCreated, db: AsyncSession, user_states
 async def handle_idea_step(event: MessageCreated, db: AsyncSession, user_states: dict):
     """Обработка текстовых шагов диалога"""
     chat_id = event.message.recipient.chat_id
-    text = event.message.text.strip()
+    text = event.message.body.text.strip()
 
     if chat_id not in user_states:
         return
