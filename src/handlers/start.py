@@ -15,27 +15,38 @@ async def handle_start(event: MessageCreated, db: AsyncSession, user_states: dic
     user_obj = getattr(event.message, "from_user", None) or getattr(event.message, "user", None)
     name = getattr(user_obj, "first_name", "Пользователь") if user_obj else "Пользователь"
 
+    logger.info(f"Handling /start for chat_id {chat_id}, user_obj {user_obj}, name {name}")
+
     # Получаем или создаём пользователя в БД
     db_user = await get_or_create_user(db, chat_id, name=name)
+    logger.info(f"DB user after get_or_create: {db_user}, id: {db_user.id}, name: {db_user.name}, phone: {db_user.phone}")
 
     if db_user.phone:
-        await event.message.answer(
-            f"👋 Привет, {name}! Ваш номер уже привязан: `{db_user.phone}`\n\n"
-            f"📋 Доступные команды:\n"
-            f"/idea — подать инициативу\n"
-            f"/list — посмотреть одобренные инициативы\n"
-            f"/vote [номер] — проголосовать",
-            parse_mode="Markdown"
-        )
+        logger.info(f"Sending answer for user with phone")
+        try:
+            await event.message.answer(
+                f"👋 Привет, {name}! Ваш номер уже привязан: `{db_user.phone}`\n\n"
+                f"📋 Доступные команды:\n"
+                f"/idea — подать инициативу\n"
+                f"/list — посмотреть одобренные инициативы\n"
+                f"/vote [номер] — проголосовать"
+            )
+            logger.info(f"Answer sent successfully")
+        except Exception as e:
+            logger.error(f"Error sending answer: {e}")
         return
 
     # Переходим в состояние ожидания телефона
     user_states[chat_id] = {"step": "waiting_phone"}
-    await event.message.answer(
-        "📱 Для продолжения отправьте ваш номер телефона в формате:\n"
-        "`+79991234567`",
-        parse_mode="Markdown"
-    )
+    logger.info(f"Sending phone request to chat_id {chat_id}")
+    try:
+        await event.message.answer(
+            "📱 Для продолжения отправьте ваш номер телефона в формате:\n"
+            "`+79991234567`"
+        )
+        logger.info(f"Answer sent successfully")
+    except Exception as e:
+        logger.error(f"Error sending answer: {e}")
 
 
 async def handle_phone_input(event: MessageCreated, db: AsyncSession, user_states: dict):
@@ -48,8 +59,7 @@ async def handle_phone_input(event: MessageCreated, db: AsyncSession, user_state
 
     if not re.match(r"^\+7\d{10}$", text):
         await event.message.answer(
-            "❌ Неверный формат. Пожалуйста, введите номер в формате: `+79991234567`",
-            parse_mode="Markdown"
+            "❌ Неверный формат. Пожалуйста, введите номер в формате: `+79991234567`"
         )
         return
 
@@ -59,7 +69,6 @@ async def handle_phone_input(event: MessageCreated, db: AsyncSession, user_state
 
     await event.message.answer(
         f"✅ Номер `{text}` успешно привязан!\n"
-        f"Теперь вы можете подать инициативу командой `/idea`",
-        parse_mode="Markdown"
+        f"Теперь вы можете подать инициативу командой `/idea`"
     )
     logger.info(f"Пользователь {chat_id} привязал телефон: {text}")

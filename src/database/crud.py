@@ -5,19 +5,25 @@ from src.logging_config import logger
 
 # === User ===
 async def get_or_create_user(db: AsyncSession, chat_id: int, name: str = None, phone: str = None) -> User:
+    logger.info(f"Checking user {chat_id}")
     stmt = select(User).where(User.id == chat_id)
     result = await db.execute(stmt)
     user = result.scalar_one_or_none()
-    
+    logger.info(f"User found: {user}")
+
     if not user:
+        logger.info(f"Creating new user {chat_id}")
         user = User(id=chat_id, name=name, phone=phone)
         db.add(user)
+        logger.info(f"Added to session")
         await db.flush()
-        logger.info(f"Создан новый пользователь: {chat_id}")
+        await db.commit()  # Сохраняем нового пользователя
+        logger.info(f"Committed, created new user: {chat_id}")
     elif phone and not user.phone:
         user.phone = phone
-        logger.info(f"Обновлён телефон для пользователя {chat_id}")
-    
+        await db.commit()  # Сохраняем обновление телефона
+        logger.info(f"Committed, обновлён телефон для пользователя {chat_id}")
+
     return user
 
 async def set_user_role(db: AsyncSession, chat_id: int, role: UserRole) -> bool:
@@ -28,8 +34,8 @@ async def set_user_role(db: AsyncSession, chat_id: int, role: UserRole) -> bool:
     return result.rowcount > 0
 
 # === Initiative ===
-async def create_initiative(db: AsyncSession, author_id: int, title: str, description: str, 
-                           category, location: str) -> Initiative:
+async def create_initiative(db: AsyncSession, author_id: int, title: str, description: str,
+                            category, location: str) -> Initiative:
     initiative = Initiative(
         author_id=author_id,
         title=title,
@@ -39,6 +45,7 @@ async def create_initiative(db: AsyncSession, author_id: int, title: str, descri
     )
     db.add(initiative)
     await db.flush()
+    await db.commit()  # Сохраняем изменения
     logger.info(f"Создана инициатива #{initiative.id} от пользователя {author_id}")
     return initiative
 
@@ -58,6 +65,7 @@ async def get_approved_initiatives(db: AsyncSession, category=None, limit: int =
 async def update_initiative_status(db: AsyncSession, initiative: Initiative, status: InitiativeStatus):
     initiative.status = status
     await db.flush()
+    await db.commit()  # Сохраняем изменения
     logger.info(f"Инициатива #{initiative.id} переведена в статус: {status.value}")
 
 # === Vote ===
@@ -72,6 +80,7 @@ async def add_vote(db: AsyncSession, user_id: int, initiative_id: int) -> bool:
     vote = Vote(user_id=user_id, initiative_id=initiative_id)
     db.add(vote)
     await db.flush()
+    await db.commit()  # Сохраняем изменения
     logger.info(f"Пользователь {user_id} проголосовал за инициативу #{initiative_id}")
     return True
 

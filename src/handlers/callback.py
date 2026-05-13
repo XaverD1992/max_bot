@@ -109,8 +109,10 @@ async def _handle_idea_confirm(callback: MessageCallback, db: AsyncSession,
     from src.services.notification import notify_moderators
     
     data = user_states.pop(chat_id)
+    logger.info(f"Confirming idea with data: {data}")
     try:
         category_enum = InitiativeCategory(data["category"])
+        logger.info(f"Category enum: {category_enum}, value: {category_enum.value}")
     except ValueError:
         await callback.message.answer("❌ Ошибка: неверная категория")
         return
