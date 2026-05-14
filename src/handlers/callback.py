@@ -1,4 +1,5 @@
 from maxapi.types import MessageCallback, ButtonsPayload, CallbackButton
+from maxapi.enums.parse_mode import ParseMode
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.logging_config import logger
 from src.database.crud import (
@@ -87,7 +88,7 @@ async def _handle_category_selected(callback: MessageCallback, db: AsyncSession,
     user_states[chat_id]["category"] = category_name
     user_states[chat_id]["step"] = IdeaStates.WAITING_LOCATION.value
     await callback.answer()
-    await callback.message.answer("📍 Укажите **местоположение** (адрес, ориентир):", parse_mode="Markdown")
+    await callback.message.answer("📍 Укажите **местоположение** (адрес, ориентир):", parse_mode=ParseMode.MARKDOWN)
 
 async def _handle_idea_confirm(callback: MessageCallback, db: AsyncSession,
                                user_states: dict, action: str):

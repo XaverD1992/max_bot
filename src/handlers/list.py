@@ -1,4 +1,5 @@
 from maxapi.types import MessageCreated, Command
+from maxapi.enums.parse_mode import ParseMode
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.logging_config import logger
 from src.database.crud import get_approved_initiatives
@@ -7,7 +8,7 @@ from src.models.initiative import InitiativeCategory
 async def handle_list(event: MessageCreated, db: AsyncSession):
     """Обработка команды /list — показ одобренных инициатив"""
     chat_id = event.message.recipient.chat_id
-    text = event.message.text.strip()
+    text = event.message.body.text.strip() if event.message.body.text else ""
     
     # Парсинг категории из команды: /list дороги
     parts = text.split(maxsplit=1)
@@ -44,5 +45,5 @@ async def handle_list(event: MessageCreated, db: AsyncSession):
             f"   /vote {init.id} — проголосовать"
         )
     
-    await event.message.answer("\n\n".join(lines), parse_mode="Markdown")
+    await event.message.answer("\n\n".join(lines), parse_mode=ParseMode.MARKDOWN)
     logger.info(f"Пользователь {chat_id} запросил список инициатив")

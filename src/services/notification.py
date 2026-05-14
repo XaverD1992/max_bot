@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from maxapi import Bot
+from maxapi.enums.parse_mode import ParseMode
 from src.database.crud import get_moderators
 from src.models.initiative import Initiative
 from src.bot.keyboards import make_moderation_keyboard
@@ -28,7 +29,7 @@ async def notify_moderators(db: AsyncSession, bot: Bot, initiative: Initiative):
                 chat_id=mod.id,
                 text=preview,
                 attachments=[keyboard],
-                parse_mode="Markdown"
+                parse_mode=ParseMode.MARKDOWN
             )
         except Exception as e:
             # Логгируем, но не прерываем отправку остальным

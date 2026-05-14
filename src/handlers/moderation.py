@@ -26,7 +26,7 @@ async def handle_reject_reason(event: MessageCreated, db: AsyncSession, user_sta
     Вызывается, когда модератор нажал ❌, и бот ожидает текстовую причину.
     """
     chat_id = event.message.recipient.chat_id
-    text = event.message.text.strip()
+    text = event.message.body.text.strip() if event.message.body.text else ""
     
     # Проверяем, что пользователь в правильном состоянии
     if chat_id not in user_states:

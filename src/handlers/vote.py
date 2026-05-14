@@ -1,5 +1,6 @@
 import re
 from maxapi.types import MessageCreated, Command
+from maxapi.enums.parse_mode import ParseMode
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.logging_config import logger
 from src.database.crud import (
@@ -13,14 +14,14 @@ from src.models.initiative import InitiativeStatus
 async def handle_vote(event: MessageCreated, db: AsyncSession):
     """Обработка команды /vote [id] — голосование за инициативу"""
     chat_id = event.message.recipient.chat_id
-    text = event.message.text.strip()
+    text = event.message.body.text.strip() if event.message.body.text else ""
     
     # Парсим номер инициативы: /vote 123
     match = re.match(r"^/vote\s+(\d+)$", text, re.I)
     if not match:
         await event.message.answer(
             "❌ Неверный формат.\nИспользуйте: `/vote 123` (где 123 — номер инициативы)",
-            parse_mode="Markdown"
+            parse_mode=ParseMode.MARKDOWN
         )
         return
     

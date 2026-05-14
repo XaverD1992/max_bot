@@ -1,4 +1,5 @@
 from maxapi.types import MessageCreated, Command
+from maxapi.enums.parse_mode import ParseMode
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.config import settings
 from src.logging_config import logger
@@ -14,14 +15,14 @@ async def handle_set_role(event: MessageCreated, db: AsyncSession):
         await event.message.answer("❌ У вас нет прав для этой команды")
         return
     
-    text = event.message.text.strip()
+    text = event.message.body.text.strip() if event.message.body.text else ""
     parts = text.split()
     
     if len(parts) != 3:
         await event.message.answer(
             "Использование: `/set_role <chat_id> <role>`\n"
             "Роли: resident, moderator, admin",
-            parse_mode="Markdown"
+            parse_mode=ParseMode.MARKDOWN
         )
         return
     

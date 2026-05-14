@@ -30,25 +30,18 @@ def register_handlers(dp: Dispatcher):
         await event.bot.send_message(
             chat_id=event.chat_id,
             text='Привет! Отправь мне /start'
-    )
-    
+        )
+
     # === Команда /start ===
     @dp.message_created(Command('start'))
     async def on_start(event: MessageCreated):
         async with async_session_factory() as db:
             await start.handle_start(event, db, user_states)
     
-    # === Обработка ввода телефона (после /start) ===
-    @dp.message_created()
-    async def on_phone_input(event: MessageCreated):
-        chat_id = event.message.recipient.chat_id
-        if chat_id in user_states and user_states[chat_id].get("step") == "waiting_phone":
-            async with async_session_factory() as db:
-                await start.handle_phone_input(event, db, user_states)
-    
     # === Подача инициативы: /idea ===
     @dp.message_created(Command('idea'))
     async def on_idea_start(event: MessageCreated):
+        logger.info(f"[main] on_idea_start: получена команда /idea от chat_id={event.message.recipient.chat_id}")
         async with async_session_factory() as db:
             await idea.handle_idea_start(event, db, user_states)
     
@@ -56,33 +49,50 @@ def register_handlers(dp: Dispatcher):
     @dp.message_created()
     async def on_idea_step(event: MessageCreated):
         chat_id = event.message.recipient.chat_id
+        logger.info(f"[main] on_idea_step: сообщение от chat_id={chat_id}, текущие состояния: {list(user_states.keys())}")
         if chat_id in user_states:
             step = user_states[chat_id].get("step")
+            logger.info(f"[main] on_idea_step: шаг для chat_id={chat_id} = {step}")
             if step in ["waiting_title", "waiting_description", "waiting_location"]:
                 async with async_session_factory() as db:
-                    await idea.handle_idea_step(event, db, user_states)
+                    try:
+                        await idea.handle_idea_step(event, db, user_states)
+                    except Exception as e:
+                        logger.exception(f"[main] Ошибка в handle_idea_step для chat_id={chat_id}: {e}")
             elif step == "waiting_reject_reason":
                 async with async_session_factory() as db:
-                    await moderation.handle_reject_reason(event, db, user_states)
-    
+                    try:
+                        await moderation.handle_reject_reason(event, db, user_states)
+                    except Exception as e:
+                        logger.exception(f"[main] Ошибка в handle_reject_reason для chat_id={chat_id}: {e}")
+
     # === Список инициатив: /list ===
     @dp.message_created(Command('list'))
     async def on_list(event: MessageCreated):
         async with async_session_factory() as db:
             await list.handle_list(event, db)
-    
+
     # === Голосование: /vote ===
     @dp.message_created(Command('vote'))
     async def on_vote(event: MessageCreated):
         async with async_session_factory() as db:
             await vote.handle_vote(event, db)
-    
+
     # === Админ-команда: /set_role ===
     @dp.message_created(Command('set_role'))
     async def on_set_role(event: MessageCreated):
         async with async_session_factory() as db:
             await admin.handle_set_role(event, db)
-    
+
+    # === Обработка ввода телефона (после /start) ===
+    @dp.message_created()
+    async def on_phone_input(event: MessageCreated):
+        chat_id = event.message.recipient.chat_id
+        logger.info(f"[main] on_phone_input: сообщение от chat_id={chat_id}, состояние: {user_states.get(chat_id)}")
+        if chat_id in user_states and user_states[chat_id].get("step") == "waiting_phone":
+            async with async_session_factory() as db:
+                await start.handle_phone_input(event, db, user_states)
+
     # === Обработка callback (кнопки) ===
     @dp.message_callback()
     async def on_callback(callback: MessageCallback):
