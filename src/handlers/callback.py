@@ -1,7 +1,9 @@
 from maxapi.types import MessageCallback, ButtonsPayload, CallbackButton
 from maxapi.enums.parse_mode import ParseMode
+from maxapi.context import MemoryContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.logging_config import logger
+from src.bot.states import IdeaStates, ModerationStates
 from src.database.crud import (
     get_initiative_by_id, 
     update_initiative_status,
@@ -9,9 +11,8 @@ from src.database.crud import (
 )
 from src.models.initiative import InitiativeStatus, InitiativeCategory
 from src.models.user import UserRole
-from src.bot.states import IdeaStates
 
-async def handle_callback(callback: MessageCallback, db: AsyncSession, user_states: dict):
+async def handle_callback(callback: MessageCallback, db: AsyncSession, context: MemoryContext):
     """Единый обработчик всех callback-запросов"""
     chat_id = callback.message.recipient.chat_id
     payload = callback.payload
@@ -26,25 +27,24 @@ async def handle_callback(callback: MessageCallback, db: AsyncSession, user_stat
         
     elif payload.startswith("mod_reject:"):
         initiative_id = int(payload.split(":")[1])
-        # Запрашиваем причину отклонения
-        user_states[chat_id] = {"step": "waiting_reject_reason", "initiative_id": initiative_id}
-        await callback.answer()  # Убираем "часики"
+        await context.set_state(ModerationStates.WAITING_REJECT_REASON)
+        await context.update_data(initiative_id=initiative_id)
+        await callback.answer()
         await callback.message.answer("✍️ Укажите причину отклонения (кратко):")
         
     # === Подача инициативы: выбор категории ===
     elif payload.startswith("cat_select:"):
         category_name = payload.split(":", 1)[1]
-        await _handle_category_selected(callback, db, user_states, category_name)
+        await _handle_category_selected(callback, db, context, category_name)
         
     # === Подтверждение подачи инициативы ===
     elif payload.startswith("idea_confirm:"):
         action = payload.split(":")[1]
-        await _handle_idea_confirm(callback, db, user_states, action)
+        await _handle_idea_confirm(callback, db, context, action)
         
     # === Кнопка "Назад" ===
     elif payload == "cmd_back":
-        if chat_id in user_states:
-            del user_states[chat_id]
+        await context.clear()
         await callback.answer()
         await callback.message.answer("↩️ Возврат в главное меню.\nДоступные команды: /idea, /list, /vote")
 
@@ -66,42 +66,38 @@ async def _handle_moderation_action(callback: MessageCallback, db: AsyncSession,
     if approve:
         await update_initiative_status(db, initiative, InitiativeStatus.APPROVED)
         await callback.answer("✅ Одобрено")
-        # Уведомляем автора
         await callback.bot.send_message(
             chat_id=initiative.author_id,
             text=f"🎉 Ваша инициатива «{initiative.title}» одобрена и опубликована!\n"
                  f"Другие жители могут проголосовать за неё командой /vote {initiative.id}"
         )
         logger.info(f"Инициатива #{initiative_id} одобрена модератором {chat_id}")
-    else:
-        # Отклонение обрабатывается в handle_callback (запрос причины)
-        pass
 
 async def _handle_category_selected(callback: MessageCallback, db: AsyncSession,
-                                   user_states: dict, category_name: str):
+                                   context: MemoryContext, category_name: str):
     """Обработка выбора категории в диалоге подачи инициативы"""
-    chat_id = callback.message.recipient.chat_id
-    if chat_id not in user_states or user_states[chat_id].get("step") != IdeaStates.WAITING_CATEGORY.value:
+    state = await context.get_state()
+    if state != IdeaStates.WAITING_CATEGORY:
         await callback.answer()
         return
     
-    user_states[chat_id]["category"] = category_name
-    user_states[chat_id]["step"] = IdeaStates.WAITING_LOCATION.value
+    await context.update_data(category=category_name)
+    await context.set_state(IdeaStates.WAITING_LOCATION)
     await callback.answer()
     await callback.message.answer("📍 Укажите **местоположение** (адрес, ориентир):", parse_mode=ParseMode.MARKDOWN)
 
 async def _handle_idea_confirm(callback: MessageCallback, db: AsyncSession,
-                               user_states: dict, action: str):
+                               context: MemoryContext, action: str):
     """Финальное подтверждение/отмена подачи инициативы"""
-    chat_id = callback.message.recipient.chat_id
-    if chat_id not in user_states or user_states[chat_id].get("step") != IdeaStates.CONFIRM_SUBMIT.value:
+    state = await context.get_state()
+    if state != IdeaStates.CONFIRM_SUBMIT:
         await callback.answer()
         return
     
     await callback.answer()
     
     if action == "no":
-        del user_states[chat_id]
+        await context.clear()
         await callback.message.answer("❌ Подача инициативы отменена.")
         return
     
@@ -109,7 +105,8 @@ async def _handle_idea_confirm(callback: MessageCallback, db: AsyncSession,
     from src.database.crud import create_initiative
     from src.services.notification import notify_moderators
     
-    data = user_states.pop(chat_id)
+    data = await context.get_data()
+    await context.clear()
     logger.info(f"Confirming idea with data: {data}")
     try:
         category_enum = InitiativeCategory(data["category"])
@@ -120,7 +117,7 @@ async def _handle_idea_confirm(callback: MessageCallback, db: AsyncSession,
     
     initiative = await create_initiative(
         db=db,
-        author_id=chat_id,
+        author_id=callback.message.recipient.chat_id,
         title=data["title"],
         description=data["description"],
         category=category_enum,
@@ -132,6 +129,5 @@ async def _handle_idea_confirm(callback: MessageCallback, db: AsyncSession,
         f"Вы получите уведомление о решении."
     )
     
-    # Уведомляем модераторов
     await notify_moderators(db, callback.bot, initiative)
     logger.info(f"Инициатива #{initiative.id} отправлена на модерацию")

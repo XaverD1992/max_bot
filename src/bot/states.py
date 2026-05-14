@@ -1,9 +1,18 @@
 """Состояния для пошагового диалога подачи инициативы"""
-from enum import Enum
+from maxapi.context import State, StatesGroup
 
-class IdeaStates(Enum):
-    WAITING_TITLE = "waiting_title"
-    WAITING_DESCRIPTION = "waiting_description"
-    WAITING_CATEGORY = "waiting_category"
-    WAITING_LOCATION = "waiting_location"
-    CONFIRM_SUBMIT = "confirm_submit"
+
+class IdeaStates(StatesGroup):
+    WAITING_TITLE = State()
+    WAITING_DESCRIPTION = State()
+    WAITING_CATEGORY = State()
+    WAITING_LOCATION = State()
+    CONFIRM_SUBMIT = State()
+
+
+class StartStates(StatesGroup):
+    WAITING_PHONE = State()
+
+
+class ModerationStates(StatesGroup):
+    WAITING_REJECT_REASON = State()

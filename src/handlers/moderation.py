@@ -5,6 +5,7 @@
 """
 import logging
 from maxapi.types import MessageCreated
+from maxapi.context import MemoryContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.logging_config import logger
@@ -13,13 +14,14 @@ from src.database.crud import (
     update_initiative_status,
     get_user_by_id
 )
+from src.bot.states import ModerationStates
 from src.models.initiative import InitiativeStatus
 from src.models.user import UserRole
 
 logger = logging.getLogger(__name__)
 
 
-async def handle_reject_reason(event: MessageCreated, db: AsyncSession, user_states: dict):
+async def handle_reject_reason(event: MessageCreated, db: AsyncSession, context: MemoryContext):
     """
     Обработка ввода причины отклонения инициативы.
     
@@ -28,31 +30,28 @@ async def handle_reject_reason(event: MessageCreated, db: AsyncSession, user_sta
     chat_id = event.message.recipient.chat_id
     text = event.message.body.text.strip() if event.message.body.text else ""
     
-    # Проверяем, что пользователь в правильном состоянии
-    if chat_id not in user_states:
+    state = await context.get_state()
+    if state != ModerationStates.WAITING_REJECT_REASON:
         return
     
-    state = user_states[chat_id]
-    if state.get("step") != "waiting_reject_reason":
-        return
-    
-    initiative_id = state.get("initiative_id")
+    data = await context.get_data()
+    initiative_id = data.get("initiative_id")
     if not initiative_id:
         await event.message.answer("❌ Ошибка: не указан номер инициативы")
-        del user_states[chat_id]
+        await context.clear()
         return
     
     # Получаем инициативу
     initiative = await get_initiative_by_id(db, initiative_id)
     if not initiative:
         await event.message.answer("❌ Инициатива не найдена (возможно, уже обработана)")
-        del user_states[chat_id]
+        await context.clear()
         return
     
     # Проверяем, что инициатива ещё на модерации
     if initiative.status != InitiativeStatus.PENDING:
         await event.message.answer("⚠️ Эта инициатива уже была обработана")
-        del user_states[chat_id]
+        await context.clear()
         return
     
     # Проверяем роль (на всякий случай)
@@ -66,7 +65,7 @@ async def handle_reject_reason(event: MessageCreated, db: AsyncSession, user_sta
     await update_initiative_status(db, initiative, InitiativeStatus.REJECTED)
     
     # Очищаем состояние
-    del user_states[chat_id]
+    await context.clear()
     
     # Уведомляем модератора
     await event.message.answer(
@@ -93,7 +92,6 @@ async def handle_reject_reason(event: MessageCreated, db: AsyncSession, user_sta
             f"Не удалось отправить уведомление автору {initiative.author_id} "
             f"об отклонении инициативы #{initiative_id}: {e}"
         )
-        # Не прерываем выполнение, т.к. статус уже изменён в БД
 
 
 async def handle_moderation_timeout(db: AsyncSession, initiative_id: int):

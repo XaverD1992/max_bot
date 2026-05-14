@@ -4,12 +4,14 @@
 """
 import re
 from maxapi.types import MessageCreated
+from maxapi.context import MemoryContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.logging_config import logger
 from src.database.crud import get_or_create_user
 
-async def handle_start(event: MessageCreated, db: AsyncSession, user_states: dict):
+
+async def handle_start(event: MessageCreated, db: AsyncSession, context: MemoryContext):
     """Начало диалога: проверка авторизации, запрос телефона"""
     chat_id = event.message.recipient.chat_id
     user_obj = getattr(event.message, "from_user", None) or getattr(event.message, "user", None)
@@ -17,7 +19,6 @@ async def handle_start(event: MessageCreated, db: AsyncSession, user_states: dic
 
     logger.info(f"Handling /start for chat_id {chat_id}, user_obj {user_obj}, name {name}")
 
-    # Получаем или создаём пользователя в БД
     db_user = await get_or_create_user(db, chat_id, name=name)
     logger.info(f"DB user after get_or_create: {db_user}, id: {db_user.id}, name: {db_user.name}, phone: {db_user.phone}")
 
@@ -36,8 +37,7 @@ async def handle_start(event: MessageCreated, db: AsyncSession, user_states: dic
             logger.error(f"Error sending answer: {e}")
         return
 
-    # Переходим в состояние ожидания телефона
-    user_states[chat_id] = {"step": "waiting_phone"}
+    await context.set_state("waiting_phone")
     logger.info(f"Sending phone request to chat_id {chat_id}")
     try:
         await event.message.answer(
@@ -49,13 +49,9 @@ async def handle_start(event: MessageCreated, db: AsyncSession, user_states: dic
         logger.error(f"Error sending answer: {e}")
 
 
-async def handle_phone_input(event: MessageCreated, db: AsyncSession, user_states: dict):
+async def handle_phone_input(event: MessageCreated, db: AsyncSession, context: MemoryContext):
     """Обработка ввода номера телефона"""
-    chat_id = event.message.recipient.chat_id
     text = event.message.body.text.strip()
-
-    if chat_id not in user_states or user_states[chat_id].get("step") != "waiting_phone":
-        return
 
     if not re.match(r"^\+7\d{10}$", text):
         await event.message.answer(
@@ -63,12 +59,11 @@ async def handle_phone_input(event: MessageCreated, db: AsyncSession, user_state
         )
         return
 
-    # Сохраняем телефон и очищаем состояние
-    await get_or_create_user(db, chat_id, phone=text)
-    del user_states[chat_id]
+    await get_or_create_user(db, event.message.recipient.chat_id, phone=text)
+    await context.clear()
 
     await event.message.answer(
         f"✅ Номер `{text}` успешно привязан!\n"
         f"Теперь вы можете подать инициативу командой `/idea`"
     )
-    logger.info(f"Пользователь {chat_id} привязал телефон: {text}")
+    logger.info(f"Пользователь {event.message.recipient.chat_id} привязал телефон: {text}")
