@@ -1,4 +1,5 @@
 from sqlalchemy import select, update
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.models import User, Initiative, Vote, UserRole, InitiativeStatus
 from src.logging_config import logger
@@ -50,12 +51,12 @@ async def create_initiative(db: AsyncSession, author_id: int, title: str, descri
     return initiative
 
 async def get_initiative_by_id(db: AsyncSession, initiative_id: int) -> Initiative | None:
-    stmt = select(Initiative).where(Initiative.id == initiative_id)
+    stmt = select(Initiative).where(Initiative.id == initiative_id).options(selectinload(Initiative.votes))
     result = await db.execute(stmt)
     return result.scalar_one_or_none()
 
 async def get_approved_initiatives(db: AsyncSession, category=None, limit: int = 20):
-    stmt = select(Initiative).where(Initiative.status == InitiativeStatus.APPROVED)
+    stmt = select(Initiative).where(Initiative.status == InitiativeStatus.APPROVED).options(selectinload(Initiative.votes))
     if category:
         stmt = stmt.where(Initiative.category == category)
     stmt = stmt.order_by(Initiative.created_at.desc()).limit(limit)
@@ -99,6 +100,6 @@ async def get_moderators(db: AsyncSession) -> list[User]:
 
 async def get_pending_initiatives(db: AsyncSession) -> list[Initiative]:
     """Получить инициативы, ожидающие модерации"""
-    stmt = select(Initiative).where(Initiative.status == InitiativeStatus.PENDING)
+    stmt = select(Initiative).where(Initiative.status == InitiativeStatus.PENDING).options(selectinload(Initiative.votes))
     result = await db.execute(stmt)
     return list(result.scalars().all())
