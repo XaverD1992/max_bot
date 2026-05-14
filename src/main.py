@@ -36,6 +36,28 @@ def register_handlers(dp: Dispatcher):
         async with async_session_factory() as db:
             await start.handle_start(event, db, context)
     
+    # === Список инициатив: /list ===
+    @dp.message_created(Command('list'))
+    async def on_list(event: MessageCreated):
+        logger.info(f"[main] on_list: получена команда /list от chat_id={event.message.recipient.chat_id}")
+        async with async_session_factory() as db:
+            try:
+                await list_handler.handle_list(event, db)
+            except Exception as e:
+                logger.exception(f"[main] Ошибка в handle_list: {e}")
+    
+    # === Голосование: /vote ===
+    @dp.message_created(Command('vote'))
+    async def on_vote(event: MessageCreated):
+        async with async_session_factory() as db:
+            await vote.handle_vote(event, db)
+    
+    # === Админ-команда: /set_role ===
+    @dp.message_created(Command('set_role'))
+    async def on_set_role(event: MessageCreated):
+        async with async_session_factory() as db:
+            await admin.handle_set_role(event, db)
+    
     # === Подача инициативы: /idea ===
     @dp.message_created(Command('idea'))
     async def on_idea_start(event: MessageCreated, context: MemoryContext):
@@ -67,7 +89,7 @@ def register_handlers(dp: Dispatcher):
                 await idea.handle_idea_step(event, db, context)
             except Exception as e:
                 logger.exception(f"[main] Ошибка в handle_idea_step: {e}")
-
+    
     @dp.message_created(F.message.body.text, "confirm_submit")
     async def on_confirm(event: MessageCreated, context: MemoryContext):
         async with async_session_factory() as db:
@@ -75,7 +97,7 @@ def register_handlers(dp: Dispatcher):
                 await idea.handle_idea_step(event, db, context)
             except Exception as e:
                 logger.exception(f"[main] Ошибка в handle_idea_step: {e}")
-
+    
     @dp.message_created(F.message.body.text, "waiting_reject_reason")
     async def on_reject_reason(event: MessageCreated, context: MemoryContext):
         async with async_session_factory() as db:
@@ -83,31 +105,13 @@ def register_handlers(dp: Dispatcher):
                 await moderation.handle_reject_reason(event, db, context)
             except Exception as e:
                 logger.exception(f"[main] Ошибка в handle_reject_reason: {e}")
-
+    
     # === Обработка ввода телефона (после /start) ===
     @dp.message_created(F.message.body.text.regexp(r"^\+7\d{10}$"), "waiting_phone")
     async def on_phone_input(event: MessageCreated, context: MemoryContext):
         async with async_session_factory() as db:
             await start.handle_phone_input(event, db, context)
-
-    # === Список инициатив: /list ===
-    @dp.message_created(Command('list'))
-    async def on_list(event: MessageCreated):
-        async with async_session_factory() as db:
-            await list_handler.handle_list(event, db)
-
-    # === Голосование: /vote ===
-    @dp.message_created(Command('vote'))
-    async def on_vote(event: MessageCreated):
-        async with async_session_factory() as db:
-            await vote.handle_vote(event, db)
-
-    # === Админ-команда: /set_role ===
-    @dp.message_created(Command('set_role'))
-    async def on_set_role(event: MessageCreated):
-        async with async_session_factory() as db:
-            await admin.handle_set_role(event, db)
-
+    
     # === Обработка callback (кнопки) ===
     @dp.message_callback()
     async def on_callback(cb: MessageCallback, context: MemoryContext):
