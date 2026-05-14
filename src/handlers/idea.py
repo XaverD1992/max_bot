@@ -8,7 +8,6 @@ from maxapi.context import MemoryContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.logging_config import logger
-from src.bot.states import IdeaStates
 from src.bot.keyboards import make_category_keyboard, make_confirm_keyboard
 
 async def handle_idea_start(event: MessageCreated, db: AsyncSession, context: MemoryContext):
@@ -16,7 +15,7 @@ async def handle_idea_start(event: MessageCreated, db: AsyncSession, context: Me
     chat_id = event.message.recipient.chat_id
     logger.info(f"[idea] handle_idea_start вызван для chat_id={chat_id}")
 
-    await context.set_state(IdeaStates.WAITING_TITLE)
+    await context.set_state("waiting_title")
     try:
         await event.message.answer(
             "✍️ Введите **название** инициативы (кратко, 1-2 строки):"
@@ -34,37 +33,37 @@ async def handle_idea_step(event: MessageCreated, db: AsyncSession, context: Mem
     state = await context.get_state()
     logger.info(f"[idea] handle_idea_step вызван для chat_id={chat_id}, state={state}, text='{text[:30]}...'")
 
-    if state == IdeaStates.WAITING_TITLE:
+    if state == "waiting_title":
         if len(text) < 3:
             await event.message.answer("❌ Название слишком короткое. Попробуйте снова.")
             return
         await context.update_data(title=text)
-        await context.set_state(IdeaStates.WAITING_DESCRIPTION)
+        await context.set_state("waiting_description")
         await event.message.answer(
             "📝 Теперь введите **описание** проблемы или предложения (подробно):",
             parse_mode=ParseMode.MARKDOWN
         )
 
-    elif state == IdeaStates.WAITING_DESCRIPTION:
+    elif state == "waiting_description":
         if len(text) < 10:
             await event.message.answer("❌ Описание слишком короткое. Добавьте деталей.")
             return
         await context.update_data(description=text)
-        await context.set_state(IdeaStates.WAITING_CATEGORY)
+        await context.set_state("waiting_category")
         
         kb = make_category_keyboard()
         await event.message.answer(
             "🏷️ Выберите **категорию**:",
-            keyboard=kb.pack(),
+            attachments=[kb.pack()],
             parse_mode=ParseMode.MARKDOWN
         )
 
-    elif state == IdeaStates.WAITING_LOCATION:
+    elif state == "waiting_location":
         if len(text) < 5:
             await event.message.answer("❌ Укажите адрес подробнее (улица, дом, ориентир).")
             return
         await context.update_data(location=text)
-        await context.set_state(IdeaStates.CONFIRM_SUBMIT)
+        await context.set_state("confirm_submit")
 
         data = await context.get_data()
         preview = (
@@ -78,8 +77,8 @@ async def handle_idea_step(event: MessageCreated, db: AsyncSession, context: Mem
         kb = make_confirm_keyboard()
         await event.message.answer(
             preview,
-            parse_mode=ParseMode.MARKDOWN,
-            keyboard=kb.pack()
+            attachments=[kb.pack()],
+            parse_mode=ParseMode.MARKDOWN
         )
 
 
@@ -89,11 +88,11 @@ async def handle_after_category(event: MessageCreated, db: AsyncSession, context
     logger.info(f"[idea] handle_after_category вызван для chat_id={chat_id}")
     
     state = await context.get_state()
-    if state != IdeaStates.WAITING_CATEGORY:
+    if state != "waiting_category":
         logger.warning(f"[idea] chat_id={chat_id} не в состоянии waiting_category.")
         return
 
-    await context.set_state(IdeaStates.WAITING_LOCATION)
+    await context.set_state("waiting_location")
     try:
         await event.message.answer(
             "📍 Укажите **местоположение** (адрес, ориентир):",

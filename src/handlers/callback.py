@@ -77,12 +77,12 @@ async def _handle_category_selected(callback: MessageCallback, db: AsyncSession,
                                    context: MemoryContext, category_name: str):
     """Обработка выбора категории в диалоге подачи инициативы"""
     state = await context.get_state()
-    if state != IdeaStates.WAITING_CATEGORY:
+    if state != "waiting_category":
         await callback.answer()
         return
     
     await context.update_data(category=category_name)
-    await context.set_state(IdeaStates.WAITING_LOCATION)
+    await context.set_state("waiting_location")
     await callback.answer()
     await callback.message.answer("📍 Укажите **местоположение** (адрес, ориентир):", parse_mode=ParseMode.MARKDOWN)
 
@@ -90,7 +90,7 @@ async def _handle_idea_confirm(callback: MessageCallback, db: AsyncSession,
                                context: MemoryContext, action: str):
     """Финальное подтверждение/отмена подачи инициативы"""
     state = await context.get_state()
-    if state != IdeaStates.CONFIRM_SUBMIT:
+    if state != "confirm_submit":
         await callback.answer()
         return
     
