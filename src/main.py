@@ -88,8 +88,17 @@ def register_handlers(dp: Dispatcher):
     # === Обработка ввода телефона (после /start) ===
     @dp.message_created(F.message.body.text.regexp(r"^\+7\d{10}$"), StartStates.WAITING_PHONE)
     async def on_phone_input(event: MessageCreated, context: MemoryContext):
+        logger.info(f"[phone] on_phone_input triggered for chat_id={event.message.recipient.chat_id}")
         async with async_session_factory() as db:
             await start.handle_phone_input(event, db, context)
+
+    # ДИАГНОСТИКА: ловим все текстовые сообщения в состоянии waiting_phone
+    @dp.message_created(F.message.body.text)
+    async def on_debug_phone(event: MessageCreated, context: MemoryContext):
+        state = await context.get_state()
+        logger.info(f"[debug] Got text message, state={state}, text={event.message.body.text[:20]}")
+        if state:
+            logger.info(f"[debug] State type: {type(state)}, repr: {repr(state)}")
 
     # === Список инициатив: /list ===
     @dp.message_created(Command('list'))

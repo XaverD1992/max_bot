@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.logging_config import logger
 from src.database.crud import get_or_create_user
+from src.bot.states import StartStates
 
 
 async def handle_start(event: MessageCreated, db: AsyncSession, context: MemoryContext):
@@ -37,7 +38,7 @@ async def handle_start(event: MessageCreated, db: AsyncSession, context: MemoryC
             logger.error(f"Error sending answer: {e}")
         return
 
-    await context.set_state("waiting_phone")
+    await context.set_state(StartStates.WAITING_PHONE)
     logger.info(f"Sending phone request to chat_id {chat_id}")
     try:
         await event.message.answer(
