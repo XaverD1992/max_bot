@@ -12,7 +12,7 @@ from src.config import settings
 from src.logging_config import logger
 from src.database.session import engine, async_session_factory
 from src.models import Base
-from src.handlers import start, idea, moderation, list, vote, admin, callback
+from src.handlers import start, idea, moderation, list as list_handler, vote, admin, callback
 
 async def init_db():
     """Создание таблиц при первом запуске"""
@@ -94,7 +94,7 @@ def register_handlers(dp: Dispatcher):
     @dp.message_created(Command('list'))
     async def on_list(event: MessageCreated):
         async with async_session_factory() as db:
-            await list.handle_list(event, db)
+            await list_handler.handle_list(event, db)
 
     # === Голосование: /vote ===
     @dp.message_created(Command('vote'))
@@ -110,9 +110,9 @@ def register_handlers(dp: Dispatcher):
 
     # === Обработка callback (кнопки) ===
     @dp.message_callback()
-    async def on_callback(callback: MessageCallback, context: MemoryContext):
+    async def on_callback(cb: MessageCallback, context: MemoryContext):
         async with async_session_factory() as db:
-            await callback.handle_callback(callback, db, context)
+            await callback.handle_callback(cb, db, context)
 
 async def main():
     """Точка входа"""

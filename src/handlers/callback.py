@@ -15,7 +15,7 @@ from src.models.user import UserRole
 async def handle_callback(callback: MessageCallback, db: AsyncSession, context: MemoryContext):
     """Единый обработчик всех callback-запросов"""
     chat_id = callback.message.recipient.chat_id
-    payload = callback.payload
+    payload = callback.callback.payload
     
     if not payload:
         return
