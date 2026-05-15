@@ -10,14 +10,14 @@ async def notify_moderators(db: AsyncSession, bot: Bot, initiative: Initiative):
     """Отправить уведомление всем модераторам о новой инициативе"""
 
     logger.info(f"Вход в функцию уведомления модераторов")
-
+    
     moderators = await get_moderators(db)
     if not moderators:
         logger.info(f"Модераторы не найдены")
         return
     
-    logger.info(f"{moderators}")
-
+    logger.info(f"Найдено {len(moderators)} модераторов: {[mod.id for mod in moderators]}")
+    
     preview = (
         f"🔔 **Новая инициатива на модерации**\n\n"
         f"📌 *{initiative.title}*\n"
@@ -29,15 +29,21 @@ async def notify_moderators(db: AsyncSession, bot: Bot, initiative: Initiative):
     )
     
     keyboard = make_moderation_keyboard(initiative.id)
+    logger.debug(f"Сформирована клавиатура для инициативы {initiative.id}")
+    logger.debug(f"Текст превью: {repr(preview[:100])}...")
     
     for mod in moderators:
         try:
-            await bot.send_message(
+            logger.debug(f"Попытка отправки уведомления модератору {mod.id} (chat_id={mod.id})")
+            result = await bot.send_message(
                 chat_id=mod.id,
                 text=preview,
-                attachments=[keyboard],
+                attachments=[keyboard.pack()],  # ИСПРАВЛЕНО: нужно использовать .pack()
                 parse_mode=ParseMode.MARKDOWN
             )
+            logger.debug(f"Результат отправки модератору {mod.id}: {result}")
+            logger.info(f"Уведомление успешно отправлено модератору {mod.id}")
         except Exception as e:
             # Логгируем, но не прерываем отправку остальным
-            logger.error(f"Не удалось отправить уведомление модератору {mod.id}: {e}")
+            logger.error(f"Не удалось отправить уведомление модератору {mod.id}: {e}", exc_info=True)
+            logger.error(f"Тип ошибки: {type(e).__name__}")
