@@ -54,29 +54,55 @@ async def handle_callback(callback: MessageCallback, db: AsyncSession, context: 
         logger.warning(f"[handle_callback] Неизвестный payload: {payload} для chat_id={chat_id}")
 
 async def _handle_moderation_action(callback: MessageCallback, db: AsyncSession,
-                                   initiative_id: int, approve: bool):
+                                    initiative_id: int, approve: bool):
     """Обработка решения модератора"""
     chat_id = callback.message.recipient.chat_id
+    action = "одобрение" if approve else "отклонение"
+    logger.info(f"[_handle_moderation_action] Начало {action} инициативы #{initiative_id} модератором chat_id={chat_id}")
+
     user = await get_user_by_id(db, chat_id)
-    
+    if user is None:
+        logger.warning(f"[_handle_moderation_action] Пользователь chat_id={chat_id} не найден в БД")
+        await callback.answer("❌ Пользователь не найден", show_alert=True)
+        return
+
+    logger.info(f"[_handle_moderation_action] Пользователь chat_id={chat_id} — роль: {user.role}")
+
     if user.role not in [UserRole.MODERATOR, UserRole.ADMIN]:
+        logger.warning(f"[_handle_moderation_action] chat_id={chat_id} не имеет прав (роль={user.role})")
         await callback.answer("❌ Нет прав", show_alert=True)
         return
-    
+
     initiative = await get_initiative_by_id(db, initiative_id)
-    if not initiative or initiative.status != InitiativeStatus.PENDING:
+    if not initiative:
+        logger.warning(f"[_handle_moderation_action] Инициатива #{initiative_id} не найдена в БД")
+        await callback.answer("⚠️ Инициатива не найдена", show_alert=True)
+        return
+
+    logger.info(f"[_handle_moderation_action] Инициатива #{initiative_id} статус: {initiative.status}")
+
+    if initiative.status != InitiativeStatus.PENDING:
+        logger.warning(f"[_handle_moderation_action] Инициатива #{initiative_id} уже обработана (статус={initiative.status})")
         await callback.answer("⚠️ Инициатива уже обработана", show_alert=True)
         return
-    
+
     if approve:
         await update_initiative_status(db, initiative, InitiativeStatus.APPROVED)
+        logger.info(f"[_handle_moderation_action] Инициатива #{initiative_id} статус изменён на APPROVED")
         await callback.answer("✅ Одобрено")
-        await callback.bot.send_message(
-            chat_id=initiative.author_id,
-            text=f"🎉 Ваша инициатива «{initiative.title}» одобрена и опубликована!\n"
-                 f"Другие жители могут проголосовать за неё командой /vote {initiative.id}"
-        )
-        logger.info(f"Инициатива #{initiative_id} одобрена модератором {chat_id}")
+        await callback.message.answer(f"✅ Инициатива #{initiative_id} «{initiative.title}» одобрена.")
+        try:
+            await callback.bot.send_message(
+                chat_id=initiative.author_id,
+                text=f"🎉 Ваша инициатива «{initiative.title}» одобрена и опубликована!\n"
+                     f"Другие жители могут проголосовать за неё командой /vote {initiative.id}"
+            )
+            logger.info(f"[_handle_moderation_action] Уведомление автору {initiative.author_id} об одобрении отправлено")
+        except Exception as e:
+            logger.error(f"[_handle_moderation_action] Ошибка при уведомлении автору {initiative.author_id}: {e}", exc_info=True)
+        logger.info(f"[_handle_moderation_action] Инициатива #{initiative_id} одобрена модератором {chat_id}")
+    else:
+        logger.info(f"[_handle_moderation_action] Одобрение не запрошено — завершение без действий")
 
 async def _handle_category_selected(callback: MessageCallback, db: AsyncSession,
                                     context: MemoryContext, category_name: str):
