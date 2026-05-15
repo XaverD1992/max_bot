@@ -3,7 +3,7 @@ from maxapi.enums.parse_mode import ParseMode
 from maxapi.context import MemoryContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.logging_config import logger
-from src.bot.states import IdeaStates, ModerationStates
+from src.bot.states import IdeaStates
 from src.database.crud import (
     get_initiative_by_id, 
     update_initiative_status,
@@ -30,7 +30,7 @@ async def handle_callback(callback: MessageCallback, db: AsyncSession, context: 
         
     elif payload.startswith("mod_reject:"):
         initiative_id = int(payload.split(":")[1])
-        await context.set_state(ModerationStates.WAITING_REJECT_REASON)
+        await context.set_state("waiting_reject_reason")
         await context.update_data(initiative_id=initiative_id)
         await callback.answer()
         await callback.message.answer("✍️ Укажите причину отклонения (кратко):")

@@ -14,7 +14,6 @@ from src.database.crud import (
     update_initiative_status,
     get_user_by_id
 )
-from src.bot.states import ModerationStates
 from src.models.initiative import InitiativeStatus
 from src.models.user import UserRole
 
@@ -35,8 +34,8 @@ async def handle_reject_reason(event: MessageCreated, db: AsyncSession, context:
     state = await context.get_state()
     logger.info(f"[handle_reject_reason] Current state: {state}")
     
-    if state != ModerationStates.WAITING_REJECT_REASON:
-        logger.warning(f"[handle_reject_reason] WRONG_STATE: expected {ModerationStates.WAITING_REJECT_REASON}, got {state}")
+    if state != "waiting_reject_reason":
+        logger.warning(f"[handle_reject_reason] WRONG_STATE: expected waiting_reject_reason, got {state}")
         return
     
     logger.info(f"[handle_reject_reason] State check passed")
