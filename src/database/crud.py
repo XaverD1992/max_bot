@@ -92,6 +92,7 @@ async def get_user_by_id(db: AsyncSession, chat_id: int) -> User | None:
 
 async def get_moderators(db: AsyncSession) -> list[User]:
     """Получить всех пользователей с ролью модератора или админа"""
+    logger.info(f"Вход в get_moderators")
     stmt = select(User).where(
         User.role.in_([UserRole.MODERATOR, UserRole.ADMIN])
     )

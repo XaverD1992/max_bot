@@ -58,6 +58,35 @@ def register_handlers(dp: Dispatcher):
         async with async_session_factory() as db:
             await admin.handle_set_role(event, db)
     
+    # === Тест: создать тестовую инициативу и отправить модераторам ===
+    @dp.message_created(Command('test_idea'))
+    async def test_idea_notification(event: MessageCreated):
+        from src.database.crud import create_initiative, get_moderators
+        from src.services.notification import notify_moderators
+        from src.models.initiative import InitiativeCategory
+        
+        async with async_session_factory() as db:
+            # Создаём тестовую инициативу от "другого пользователя"
+            test_author_id = 531823532  # тестовый chat_id
+            
+            # Проверяем, есть ли модераторы
+            moderators = await get_moderators(db)
+            if not moderators:
+                await event.message.answer("❌ Нет модераторов в базе! Сначала добавьте модератора через /set_role")
+                return
+            
+            initiative = await create_initiative(
+                db=db,
+                author_id=test_author_id,
+                title="Тестовая инициатива от тестового пользователя",
+                description="Описание тестовой инициативы для проверки модерации и уведомлений",
+                category=InitiativeCategory("благоустройство"),
+                location="ул. Тестовая, д. 1"
+            )
+            
+            await notify_moderators(db, event.bot, initiative)
+            await event.message.answer(f"✅ Тестовая инициатива #{initiative.id} создана и модераторам отправлено уведомление")
+    
     # === Подача инициативы: /idea ===
     @dp.message_created(Command('idea'))
     async def on_idea_start(event: MessageCreated, context: MemoryContext):

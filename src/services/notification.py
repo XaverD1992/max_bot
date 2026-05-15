@@ -4,13 +4,20 @@ from maxapi.enums.parse_mode import ParseMode
 from src.database.crud import get_moderators
 from src.models.initiative import Initiative
 from src.bot.keyboards import make_moderation_keyboard
+from src.logging_config import logger
 
 async def notify_moderators(db: AsyncSession, bot: Bot, initiative: Initiative):
     """Отправить уведомление всем модераторам о новой инициативе"""
+
+    logger.info(f"Вход в функцию уведомления модераторов")
+
     moderators = await get_moderators(db)
     if not moderators:
+        logger.info(f"Модераторы не найдены")
         return
     
+    logger.info(f"{moderators}")
+
     preview = (
         f"🔔 **Новая инициатива на модерации**\n\n"
         f"📌 *{initiative.title}*\n"
@@ -33,5 +40,4 @@ async def notify_moderators(db: AsyncSession, bot: Bot, initiative: Initiative):
             )
         except Exception as e:
             # Логгируем, но не прерываем отправку остальным
-            from src.logging_config import logger
             logger.error(f"Не удалось отправить уведомление модератору {mod.id}: {e}")
