@@ -30,48 +30,76 @@ async def handle_reject_reason(event: MessageCreated, db: AsyncSession, context:
     chat_id = event.message.recipient.chat_id
     text = event.message.body.text.strip() if event.message.body.text else ""
     
+    logger.info(f"[handle_reject_reason] START: chat_id={chat_id}, text_length={len(text)}")
+    
     state = await context.get_state()
+    logger.info(f"[handle_reject_reason] Current state: {state}")
+    
     if state != ModerationStates.WAITING_REJECT_REASON:
+        logger.warning(f"[handle_reject_reason] WRONG_STATE: expected {ModerationStates.WAITING_REJECT_REASON}, got {state}")
         return
     
+    logger.info(f"[handle_reject_reason] State check passed")
+    
     data = await context.get_data()
+    logger.info(f"[handle_reject_reason] Context data: {data}")
+    
     initiative_id = data.get("initiative_id")
     if not initiative_id:
+        logger.error(f"[handle_reject_reason] NO_INITIATIVE_ID in context")
         await event.message.answer("❌ Ошибка: не указан номер инициативы")
         await context.clear()
         return
     
+    logger.info(f"[handle_reject_reason] Initiative ID: {initiative_id}")
+    
     # Получаем инициативу
+    logger.info(f"[handle_reject_reason] Fetching initiative from DB...")
     initiative = await get_initiative_by_id(db, initiative_id)
     if not initiative:
+        logger.error(f"[handle_reject_reason] Initiative #{initiative_id} NOT FOUND")
         await event.message.answer("❌ Инициатива не найдена (возможно, уже обработана)")
         await context.clear()
         return
     
+    logger.info(f"[handle_reject_reason] Initiative found: title='{initiative.title}', status={initiative.status}")
+    
     # Проверяем, что инициатива ещё на модерации
     if initiative.status != InitiativeStatus.PENDING:
+        logger.warning(f"[handle_reject_reason] Initiative already processed, status={initiative.status}")
         await event.message.answer("⚠️ Эта инициатива уже была обработана")
         await context.clear()
         return
     
+    logger.info(f"[handle_reject_reason] Status check passed (PENDING)")
+    
     # Проверяем роль (на всякий случай)
+    logger.info(f"[handle_reject_reason] Checking user role for chat_id={chat_id}")
     user = await get_user_by_id(db, chat_id)
     if user and user.role not in [UserRole.MODERATOR, UserRole.ADMIN]:
+        logger.warning(f"[handle_reject_reason] INSUFFICIENT_PERMISSIONS: role={user.role}")
         await event.message.answer("❌ У вас нет прав для этого действия")
         return
     
+    logger.info(f"[handle_reject_reason] Permission check passed, user role={user.role if user else 'None'}")
+    
     # Сохраняем причину и меняем статус
     reason = text[:500]  # Ограничиваем длину
+    logger.info(f"[handle_reject_reason] Rejecting with reason: '{reason[:100]}...'")
+    
     await update_initiative_status(db, initiative, InitiativeStatus.REJECTED)
+    logger.info(f"[handle_reject_reason] Initiative #{initiative_id} status updated to REJECTED")
     
     # Очищаем состояние
     await context.clear()
+    logger.info(f"[handle_reject_reason] Context cleared")
     
     # Уведомляем модератора
     await event.message.answer(
         f"❌ Инициатива #{initiative.id} «{initiative.title}» отклонена.\n"
         f"Автору отправлено уведомление."
     )
+    logger.info(f"[handle_reject_reason] Moderator notified")
     
     # Уведомляем автора инициативы
     try:
