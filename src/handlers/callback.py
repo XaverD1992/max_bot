@@ -17,7 +17,10 @@ async def handle_callback(callback: MessageCallback, db: AsyncSession, context: 
     chat_id = callback.message.recipient.chat_id
     payload = callback.callback.payload
     
+    logger.info(f"[handle_callback] Получен callback от chat_id={chat_id}, payload={payload}")
+    
     if not payload:
+        logger.warning(f"[handle_callback] Пустой payload от chat_id={chat_id}")
         return
     
     # === Модерация: одобрить/отклонить ===
@@ -47,6 +50,8 @@ async def handle_callback(callback: MessageCallback, db: AsyncSession, context: 
         await context.clear()
         await callback.answer()
         await callback.message.answer("↩️ Возврат в главное меню.\nДоступные команды: /idea, /list, /vote")
+    else:
+        logger.warning(f"[handle_callback] Неизвестный payload: {payload} для chat_id={chat_id}")
 
 async def _handle_moderation_action(callback: MessageCallback, db: AsyncSession,
                                    initiative_id: int, approve: bool):
@@ -74,10 +79,14 @@ async def _handle_moderation_action(callback: MessageCallback, db: AsyncSession,
         logger.info(f"Инициатива #{initiative_id} одобрена модератором {chat_id}")
 
 async def _handle_category_selected(callback: MessageCallback, db: AsyncSession,
-                                   context: MemoryContext, category_name: str):
+                                    context: MemoryContext, category_name: str):
     """Обработка выбора категории в диалоге подачи инициативы"""
+    chat_id = callback.message.recipient.chat_id
     state = await context.get_state()
+    logger.info(f"[handle_category_selected] chat_id={chat_id}, category={category_name}, state={state}")
+    
     if state != "waiting_category":
+        logger.warning(f"[handle_category_selected] Неверное состояние {state} для chat_id={chat_id}")
         await callback.answer()
         return
     
@@ -87,27 +96,37 @@ async def _handle_category_selected(callback: MessageCallback, db: AsyncSession,
     await callback.message.answer("📍 Укажите **местоположение** (адрес, ориентир):", parse_mode=ParseMode.MARKDOWN)
 
 async def _handle_idea_confirm(callback: MessageCallback, db: AsyncSession,
-                               context: MemoryContext, action: str):
+                                context: MemoryContext, action: str):
     """Финальное подтверждение/отмена подачи инициативы"""
+    chat_id = callback.message.recipient.chat_id
+    logger.info(f"[handle_idea_confirm] Вызван для chat_id={chat_id}, action={action}")
+    
     state = await context.get_state()
+    logger.info(f"[handle_idea_confirm] Текущее состояние: {state}")
+    
     if state != "confirm_submit":
+        logger.warning(f"[handle_idea_confirm] Неверное состояние {state} для chat_id={chat_id}, ожидалось confirm_submit")
         await callback.answer()
         return
     
     await callback.answer()
     
     if action == "no":
+        logger.info(f"[handle_idea_confirm] Пользователь {chat_id} отменил подачу")
         await context.clear()
         await callback.message.answer("❌ Подача инициативы отменена.")
         return
+    
+    logger.info(f"[handle_idea_confirm] Пользователь {chat_id} подтверждает отправку")
+    data = await context.get_data()
+    logger.info(f"[handle_idea_confirm] Данные из контекста: {data}")
     
     # Создаём инициативу
     from src.database.crud import create_initiative
     from src.services.notification import notify_moderators
     
-    data = await context.get_data()
     await context.clear()
-    logger.info(f"Confirming idea with data: {data}")
+    logger.info(f"[handle_idea_confirm] Создаём инициативу с данными: {data}")
     try:
         category_enum = InitiativeCategory(data["category"])
         logger.info(f"Category enum: {category_enum}, value: {category_enum.value}")
@@ -123,6 +142,7 @@ async def _handle_idea_confirm(callback: MessageCallback, db: AsyncSession,
         category=category_enum,
         location=data["location"]
     )
+    logger.info(f"[handle_idea_confirm] Инициатива создана с ID={initiative.id}")
     
     await callback.message.answer(
         f"✅ Инициатива #{initiative.id} отправлена на модерацию!\n"
@@ -130,4 +150,4 @@ async def _handle_idea_confirm(callback: MessageCallback, db: AsyncSession,
     )
     
     await notify_moderators(db, callback.bot, initiative)
-    logger.info(f"Инициатива #{initiative.id} отправлена на модерацию")
+    logger.info(f"[handle_idea_confirm] Инициатива #{initiative.id} уведомлена модераторов")
