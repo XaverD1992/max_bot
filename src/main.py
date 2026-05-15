@@ -85,7 +85,7 @@ def register_handlers(dp: Dispatcher):
             )
             
             await notify_moderators(db, event.bot, initiative)
-            await event.message.answer(f"✅ Тестовая инициатива #{initiative.id} создана и модераторам отправлено уведомление")
+            # await event.message.answer(f"✅ Тестовая инициатива #{initiative.id} создана и модераторам отправлено уведомление")
     
     # === Подача инициативы: /idea ===
     @dp.message_created(Command('idea'))

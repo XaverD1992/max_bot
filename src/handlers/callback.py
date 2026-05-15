@@ -89,7 +89,7 @@ async def _handle_moderation_action(callback: MessageCallback, db: AsyncSession,
     if approve:
         await update_initiative_status(db, initiative, InitiativeStatus.APPROVED)
         logger.info(f"[_handle_moderation_action] Инициатива #{initiative_id} статус изменён на APPROVED")
-        await callback.answer("✅ Одобрено")
+        # await callback.message.answer("✅ Одобрено")
         await callback.message.answer(f"✅ Инициатива #{initiative_id} «{initiative.title}» одобрена.")
         try:
             await callback.bot.send_message(
