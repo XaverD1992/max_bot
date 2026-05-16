@@ -87,6 +87,13 @@ def register_handlers(dp: Dispatcher):
             await notify_moderators(db, event.bot, initiative)
             # await event.message.answer(f"✅ Тестовая инициатива #{initiative.id} создана и модераторам отправлено уведомление")
     
+    # === Подача инициативы: /idea ===
+    @dp.message_created(Command('idea'))
+    async def on_idea_start(event: MessageCreated, context: MemoryContext):
+        logger.info(f"[main] on_idea_start: получена команда /idea от chat_id={event.message.recipient.chat_id}")
+        async with async_session_factory() as db:
+            await idea.handle_idea_start(event, db, context)
+
     @dp.message_created(F.message.body.text, "waiting_reject_reason")
     async def on_reject_reason(event: MessageCreated, context: MemoryContext):
         async with async_session_factory() as db:
@@ -94,13 +101,6 @@ def register_handlers(dp: Dispatcher):
                 await moderation.handle_reject_reason(event, db, context)
             except Exception as e:
                 logger.exception(f"[main] Ошибка в handle_reject_reason: {e}")
-    
-    # === Подача инициативы: /idea ===
-    @dp.message_created(Command('idea'))
-    async def on_idea_start(event: MessageCreated, context: MemoryContext):
-        logger.info(f"[main] on_idea_start: получена команда /idea от chat_id={event.message.recipient.chat_id}")
-        async with async_session_factory() as db:
-            await idea.handle_idea_start(event, db, context)
     
     # === Шаги диалога подачи инициативы ===
     @dp.message_created(F.message.body.text, "waiting_title")
