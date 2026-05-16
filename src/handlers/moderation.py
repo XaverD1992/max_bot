@@ -94,11 +94,15 @@ async def handle_reject_reason(event: MessageCreated, db: AsyncSession, context:
     logger.info(f"[handle_reject_reason] Context cleared")
     
     # Уведомляем модератора
-    await event.message.answer(
-        f"❌ Инициатива #{initiative.id} «{initiative.title}» отклонена.\n"
-        f"Автору отправлено уведомление."
-    )
-    logger.info(f"[handle_reject_reason] Moderator notified")
+    logger.info(f"[handle_reject_reason] About to notify moderator chat_id={chat_id}")
+    try:
+        await event.message.answer(
+            f"❌ Инициатива #{initiative.id} «{initiative.title}» отклонена.\n"
+            f"Автору отправлено уведомление."
+        )
+        logger.info(f"[handle_reject_reason] Moderator notification sent successfully")
+    except Exception as e:
+        logger.error(f"[handle_reject_reason] FAILED to notify moderator: {e}", exc_info=True)
     
     # Уведомляем автора инициативы
     try:

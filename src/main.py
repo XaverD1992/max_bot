@@ -67,7 +67,7 @@ def register_handlers(dp: Dispatcher):
         
         async with async_session_factory() as db:
             # Создаём тестовую инициативу от "другого пользователя"
-            test_author_id = 531823532  # тестовый chat_id
+            test_author_id = 531823431  # тестовый chat_id
             
             # Проверяем, есть ли модераторы
             moderators = await get_moderators(db)
@@ -86,6 +86,14 @@ def register_handlers(dp: Dispatcher):
             
             await notify_moderators(db, event.bot, initiative)
             # await event.message.answer(f"✅ Тестовая инициатива #{initiative.id} создана и модераторам отправлено уведомление")
+    
+    @dp.message_created(F.message.body.text, "waiting_reject_reason")
+    async def on_reject_reason(event: MessageCreated, context: MemoryContext):
+        async with async_session_factory() as db:
+            try:
+                await moderation.handle_reject_reason(event, db, context)
+            except Exception as e:
+                logger.exception(f"[main] Ошибка в handle_reject_reason: {e}")
     
     # === Подача инициативы: /idea ===
     @dp.message_created(Command('idea'))
@@ -126,14 +134,6 @@ def register_handlers(dp: Dispatcher):
                 await idea.handle_idea_step(event, db, context)
             except Exception as e:
                 logger.exception(f"[main] Ошибка в handle_idea_step: {e}")
-    
-    @dp.message_created(F.message.body.text, "waiting_reject_reason")
-    async def on_reject_reason(event: MessageCreated, context: MemoryContext):
-        async with async_session_factory() as db:
-            try:
-                await moderation.handle_reject_reason(event, db, context)
-            except Exception as e:
-                logger.exception(f"[main] Ошибка в handle_reject_reason: {e}")
     
     # === Обработка ввода телефона (после /start) ===
     @dp.message_created(F.message.body.text.regexp(r"^\+7\d{10}$"), "waiting_phone")
