@@ -23,16 +23,17 @@ async def init_db():
 def register_handlers(dp: Dispatcher):
     """Регистрация всех обработчиков событий"""
 
-    @dp.bot_started()
-    async def bot_started(event: BotStarted):
-        await event.bot.send_message(
-            chat_id=event.chat_id,
-            text='Привет! Отправь мне /start'
-        )
+@dp.bot_started()
+   async def bot_started(event: BotStarted):
+       logger.info(f"[main] bot_started: chat_id={event.chat_id}")
+       await event.bot.send_message(
+           chat_id=event.chat_id,
+           text='Привет! Отправь мне /start')
 
     # === Команда /start ===
     @dp.message_created(Command('start'))
     async def on_start(event: MessageCreated, context: MemoryContext):
+        logger.info(f"[main] on_start: chat_id={event.message.recipient.chat_id}")
         async with async_session_factory() as db:
             await start.handle_start(event, db, context)
     
@@ -49,32 +50,35 @@ def register_handlers(dp: Dispatcher):
     # === Голосование: /vote ===
     @dp.message_created(Command('vote'))
     async def on_vote(event: MessageCreated):
+        logger.info(f"[main] on_vote: chat_id={event.message.recipient.chat_id}")
         async with async_session_factory() as db:
             await vote.handle_vote(event, db)
     
     # === Админ-команда: /set_role ===
     @dp.message_created(Command('set_role'))
     async def on_set_role(event: MessageCreated):
+        logger.info(f"[main] on_set_role: chat_id={event.message.recipient.chat_id}")
         async with async_session_factory() as db:
             await admin.handle_set_role(event, db)
     
     # === Тест: создать тестовую инициативу и отправить модераторам ===
     @dp.message_created(Command('test_idea'))
     async def test_idea_notification(event: MessageCreated):
+        logger.info(f"[main] test_idea_notification: chat_id={event.message.recipient.chat_id}")
         from src.database.crud import create_initiative, get_moderators
         from src.services.notification import notify_moderators
         from src.models.initiative import InitiativeCategory
-        
+         
         async with async_session_factory() as db:
             # Создаём тестовую инициативу от "другого пользователя"
             test_author_id = 531823431  # тестовый chat_id
-            
+             
             # Проверяем, есть ли модераторы
             moderators = await get_moderators(db)
             if not moderators:
                 await event.message.answer("❌ Нет модераторов в базе! Сначала добавьте модератора через /set_role")
                 return
-            
+             
             initiative = await create_initiative(
                 db=db,
                 author_id=test_author_id,
@@ -83,7 +87,7 @@ def register_handlers(dp: Dispatcher):
                 category=InitiativeCategory("благоустройство"),
                 location="ул. Тестовая, д. 1"
             )
-            
+             
             await notify_moderators(db, event.bot, initiative)
             # await event.message.answer(f"✅ Тестовая инициатива #{initiative.id} создана и модераторам отправлено уведомление")
     
@@ -96,6 +100,7 @@ def register_handlers(dp: Dispatcher):
 
     @dp.message_created(F.message.body.text, "waiting_reject_reason")
     async def on_reject_reason(event: MessageCreated, context: MemoryContext):
+        logger.info(f"[main] on_reject_reason: chat_id={event.message.recipient.chat_id}")
         async with async_session_factory() as db:
             try:
                 await moderation.handle_reject_reason(event, db, context)
@@ -105,6 +110,7 @@ def register_handlers(dp: Dispatcher):
     # === Шаги диалога подачи инициативы ===
     @dp.message_created(F.message.body.text, "waiting_title")
     async def on_title(event: MessageCreated, context: MemoryContext):
+        logger.info(f"[main] on_title: chat_id={event.message.recipient.chat_id}")
         async with async_session_factory() as db:
             try:
                 await idea.handle_idea_step(event, db, context)
@@ -113,6 +119,7 @@ def register_handlers(dp: Dispatcher):
 
     @dp.message_created(F.message.body.text, "waiting_description")
     async def on_description(event: MessageCreated, context: MemoryContext):
+        logger.info(f"[main] on_description: chat_id={event.message.recipient.chat_id}")
         async with async_session_factory() as db:
             try:
                 await idea.handle_idea_step(event, db, context)
@@ -121,6 +128,7 @@ def register_handlers(dp: Dispatcher):
 
     @dp.message_created(F.message.body.text, "waiting_location")
     async def on_location(event: MessageCreated, context: MemoryContext):
+        logger.info(f"[main] on_location: chat_id={event.message.recipient.chat_id}")
         async with async_session_factory() as db:
             try:
                 await idea.handle_idea_step(event, db, context)
@@ -129,6 +137,7 @@ def register_handlers(dp: Dispatcher):
     
     @dp.message_created(F.message.body.text, "confirm_submit")
     async def on_confirm(event: MessageCreated, context: MemoryContext):
+        logger.info(f"[main] on_confirm: chat_id={event.message.recipient.chat_id}")
         async with async_session_factory() as db:
             try:
                 await idea.handle_idea_step(event, db, context)
@@ -138,12 +147,14 @@ def register_handlers(dp: Dispatcher):
     # === Обработка ввода телефона (после /start) ===
     @dp.message_created(F.message.body.text.regexp(r"^\+7\d{10}$"), "waiting_phone")
     async def on_phone_input(event: MessageCreated, context: MemoryContext):
+        logger.info(f"[main] on_phone_input: chat_id={event.message.recipient.chat_id}")
         async with async_session_factory() as db:
             await start.handle_phone_input(event, db, context)
     
     # === Обработка callback (кнопки) ===
     @dp.message_callback()
     async def on_callback(cb: MessageCallback, context: MemoryContext):
+        logger.info(f"[main] on_callback: chat_id={cb.message.recipient.chat_id}")
         async with async_session_factory() as db:
             await callback.handle_callback(cb, db, context)
 
