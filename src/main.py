@@ -23,8 +23,8 @@ async def init_db():
 def register_handlers(dp: Dispatcher):
     """Регистрация всех обработчиков событий"""
 
-@dp.bot_started()
-   async def bot_started(event: BotStarted):
+    @dp.bot_started()
+    async def bot_started(event: BotStarted):
        logger.info(f"[main] bot_started: chat_id={event.chat_id}")
        await event.bot.send_message(
            chat_id=event.chat_id,
