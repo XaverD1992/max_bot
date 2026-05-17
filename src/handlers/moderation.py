@@ -16,8 +16,7 @@ from src.database.crud import (
 )
 from src.models.initiative import InitiativeStatus
 from src.models.user import UserRole
-
-logger = logging.getLogger(__name__)
+from src.bot.states import ModerationStates
 
 
 async def handle_reject_reason(event: MessageCreated, db: AsyncSession, context: MemoryContext):
@@ -34,7 +33,7 @@ async def handle_reject_reason(event: MessageCreated, db: AsyncSession, context:
     state = await context.get_state()
     logger.info(f"[handle_reject_reason] Current state: {state}")
     
-    if state != "waiting_reject_reason":
+    if state != ModerationStates.WAITING_REJECT_REASON:
         logger.warning(f"[handle_reject_reason] WRONG_STATE: expected waiting_reject_reason, got {state}")
         return
     

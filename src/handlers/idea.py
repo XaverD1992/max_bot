@@ -9,13 +9,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.logging_config import logger
 from src.bot.keyboards import make_category_keyboard, make_confirm_keyboard
+from src.bot.states import IdeaStates
 
 async def handle_idea_start(event: MessageCreated, db: AsyncSession, context: MemoryContext):
     """Запуск диалога подачи инициативы"""
     chat_id = event.message.recipient.chat_id
     logger.info(f"[idea] handle_idea_start вызван для chat_id={chat_id}")
 
-    await context.set_state("waiting_title")
+    await context.set_state(IdeaStates.WAITING_TITLE)
     try:
         await event.message.answer(
             "✍️ Введите **название** инициативы (кратко, 1-2 строки):"
@@ -33,23 +34,23 @@ async def handle_idea_step(event: MessageCreated, db: AsyncSession, context: Mem
     state = await context.get_state()
     logger.info(f"[idea] handle_idea_step вызван для chat_id={chat_id}, state={state}, text='{text[:30]}...'")
 
-    if state == "waiting_title":
+    if state == IdeaStates.WAITING_TITLE:
         if len(text) < 3:
             await event.message.answer("❌ Название слишком короткое. Попробуйте снова.")
             return
         await context.update_data(title=text)
-        await context.set_state("waiting_description")
+        await context.set_state(IdeaStates.WAITING_DESCRIPTION)
         await event.message.answer(
             "📝 Теперь введите **описание** проблемы или предложения (подробно):",
             parse_mode=ParseMode.MARKDOWN
         )
 
-    elif state == "waiting_description":
+    elif state == IdeaStates.WAITING_DESCRIPTION:
         if len(text) < 10:
             await event.message.answer("❌ Описание слишком короткое. Добавьте деталей.")
             return
         await context.update_data(description=text)
-        await context.set_state("waiting_category")
+        await context.set_state(IdeaStates.WAITING_CATEGORY)
         
         kb = make_category_keyboard()
         await event.message.answer(
@@ -58,13 +59,13 @@ async def handle_idea_step(event: MessageCreated, db: AsyncSession, context: Mem
             parse_mode=ParseMode.MARKDOWN
         )
 
-    elif state == "waiting_location":
+    elif state == IdeaStates.WAITING_LOCATION:
         if len(text) < 5:
             await event.message.answer("❌ Укажите адрес подробнее (улица, дом, ориентир).")
             return
         await context.update_data(location=text)
-        await context.set_state("confirm_submit")
-
+        await context.set_state(IdeaStates.CONFIRM_SUBMIT)
+        
         data = await context.get_data()
         preview = (
             f"🔍 Проверьте данные перед отправкой:\n\n"
@@ -88,11 +89,11 @@ async def handle_after_category(event: MessageCreated, db: AsyncSession, context
     logger.info(f"[idea] handle_after_category вызван для chat_id={chat_id}")
     
     state = await context.get_state()
-    if state != "waiting_category":
+    if state != IdeaStates.WAITING_CATEGORY:
         logger.warning(f"[idea] chat_id={chat_id} не в состоянии waiting_category.")
         return
-
-    await context.set_state("waiting_location")
+    
+    await context.set_state(IdeaStates.WAITING_LOCATION)
     try:
         await event.message.answer(
             "📍 Укажите **местоположение** (адрес, ориентир):",

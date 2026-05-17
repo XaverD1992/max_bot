@@ -13,6 +13,7 @@ from src.logging_config import logger
 from src.database.session import engine, async_session_factory
 from src.models import Base
 from src.handlers import start, idea, moderation, list as list_handler, vote, admin, callback
+from src.bot.states import IdeaStates, ModerationStates, StartStates
 
 async def init_db():
     """Создание таблиц при первом запуске"""
@@ -98,7 +99,7 @@ def register_handlers(dp: Dispatcher):
         async with async_session_factory() as db:
             await idea.handle_idea_start(event, db, context)
 
-    @dp.message_created(F.message.body.text, "waiting_reject_reason")
+    @dp.message_created(F.message.body.text, ModerationStates.WAITING_REJECT_REASON)
     async def on_reject_reason(event: MessageCreated, context: MemoryContext):
         logger.info(f"[main] on_reject_reason: chat_id={event.message.recipient.chat_id}")
         async with async_session_factory() as db:
@@ -108,7 +109,7 @@ def register_handlers(dp: Dispatcher):
                 logger.exception(f"[main] Ошибка в handle_reject_reason: {e}")
     
     # === Шаги диалога подачи инициативы ===
-    @dp.message_created(F.message.body.text, "waiting_title")
+    @dp.message_created(F.message.body.text, IdeaStates.WAITING_TITLE)
     async def on_title(event: MessageCreated, context: MemoryContext):
         logger.info(f"[main] on_title: chat_id={event.message.recipient.chat_id}")
         async with async_session_factory() as db:
@@ -117,7 +118,7 @@ def register_handlers(dp: Dispatcher):
             except Exception as e:
                 logger.exception(f"[main] Ошибка в handle_idea_step для chat_id={event.message.recipient.chat_id}: {e}")
 
-    @dp.message_created(F.message.body.text, "waiting_description")
+    @dp.message_created(F.message.body.text, IdeaStates.WAITING_DESCRIPTION)
     async def on_description(event: MessageCreated, context: MemoryContext):
         logger.info(f"[main] on_description: chat_id={event.message.recipient.chat_id}")
         async with async_session_factory() as db:
@@ -126,7 +127,7 @@ def register_handlers(dp: Dispatcher):
             except Exception as e:
                 logger.exception(f"[main] Ошибка в handle_idea_step: {e}")
 
-    @dp.message_created(F.message.body.text, "waiting_location")
+    @dp.message_created(F.message.body.text, IdeaStates.WAITING_LOCATION)
     async def on_location(event: MessageCreated, context: MemoryContext):
         logger.info(f"[main] on_location: chat_id={event.message.recipient.chat_id}")
         async with async_session_factory() as db:
@@ -135,7 +136,7 @@ def register_handlers(dp: Dispatcher):
             except Exception as e:
                 logger.exception(f"[main] Ошибка в handle_idea_step: {e}")
     
-    @dp.message_created(F.message.body.text, "confirm_submit")
+    @dp.message_created(F.message.body.text, IdeaStates.CONFIRM_SUBMIT)
     async def on_confirm(event: MessageCreated, context: MemoryContext):
         logger.info(f"[main] on_confirm: chat_id={event.message.recipient.chat_id}")
         async with async_session_factory() as db:
@@ -145,7 +146,7 @@ def register_handlers(dp: Dispatcher):
                 logger.exception(f"[main] Ошибка в handle_idea_step: {e}")
     
     # === Обработка ввода телефона (после /start) ===
-    @dp.message_created(F.message.body.text.regexp(r"^\+7\d{10}$"), "waiting_phone")
+    @dp.message_created(F.message.body.text.regexp(r"^\+7\d{10}$"), StartStates.WAITING_PHONE)
     async def on_phone_input(event: MessageCreated, context: MemoryContext):
         logger.info(f"[main] on_phone_input: chat_id={event.message.recipient.chat_id}")
         async with async_session_factory() as db:

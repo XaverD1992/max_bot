@@ -3,7 +3,7 @@ from maxapi.enums.parse_mode import ParseMode
 from maxapi.context import MemoryContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.logging_config import logger
-from src.bot.states import IdeaStates
+from src.bot.states import IdeaStates, ModerationStates
 from src.database.crud import (
     get_initiative_by_id, 
     update_initiative_status,
@@ -30,7 +30,7 @@ async def handle_callback(callback: MessageCallback, db: AsyncSession, context: 
         
     elif payload.startswith("mod_reject:"):
         initiative_id = int(payload.split(":")[1])
-        await context.set_state("waiting_reject_reason")
+        await context.set_state(ModerationStates.WAITING_REJECT_REASON)
         await context.update_data(initiative_id=initiative_id)
         await callback.answer()
         await callback.message.answer("✍️ Укажите причину отклонения (кратко):")
@@ -111,13 +111,13 @@ async def _handle_category_selected(callback: MessageCallback, db: AsyncSession,
     state = await context.get_state()
     logger.info(f"[handle_category_selected] chat_id={chat_id}, category={category_name}, state={state}")
     
-    if state != "waiting_category":
+    if state != IdeaStates.WAITING_CATEGORY:
         logger.warning(f"[handle_category_selected] Неверное состояние {state} для chat_id={chat_id}")
         await callback.answer()
         return
     
     await context.update_data(category=category_name)
-    await context.set_state("waiting_location")
+    await context.set_state(IdeaStates.WAITING_LOCATION)
     await callback.answer()
     await callback.message.answer("📍 Укажите **местоположение** (адрес, ориентир):", parse_mode=ParseMode.MARKDOWN)
 
@@ -130,7 +130,7 @@ async def _handle_idea_confirm(callback: MessageCallback, db: AsyncSession,
     state = await context.get_state()
     logger.info(f"[handle_idea_confirm] Текущее состояние: {state}")
     
-    if state != "confirm_submit":
+    if state != IdeaStates.CONFIRM_SUBMIT:
         logger.warning(f"[handle_idea_confirm] Неверное состояние {state} для chat_id={chat_id}, ожидалось confirm_submit")
         await callback.answer()
         return
