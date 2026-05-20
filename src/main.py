@@ -10,16 +10,9 @@ from maxapi.context import MemoryContext
 
 from src.config import settings
 from src.logging_config import logger
-from src.database.session import engine, async_session_factory
-from src.models import Base
+from src.database.session import async_session_factory
 from src.handlers import start, idea, moderation, list as list_handler, vote, admin, callback
 from src.bot.states import IdeaStates, ModerationStates, StartStates
-
-async def init_db():
-    """Создание таблиц при первом запуске"""
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    logger.info("✅ База данных инициализирована")
 
 def register_handlers(dp: Dispatcher):
     """Регистрация всех обработчиков событий"""
@@ -161,8 +154,6 @@ def register_handlers(dp: Dispatcher):
 
 async def main():
     """Точка входа"""
-    await init_db()
-    
     bot = Bot(token=settings.BOT_TOKEN)
     dp = Dispatcher()
     

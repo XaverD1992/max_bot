@@ -2,16 +2,17 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 RUN pip install --no-cache-dir uv
 
 COPY pyproject.toml ./
-RUN uv pip install --system -r pyproject.toml
+RUN uv pip install --system .
 
 COPY src ./src
 COPY alembic ./alembic
 COPY alembic.ini ./
+COPY docker-entrypoint.sh /usr/local/bin/
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/health' if 'WEBHOOK' in open('/proc/1/environ').read() else 'file:///dev/null', timeout=2)" || exit 1
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-CMD ["python", "-m", "src.main"]
+ENTRYPOINT ["docker-entrypoint.sh"]
