@@ -17,5 +17,16 @@ services:
       timeout: 5s
       retries: 5
 
+  bot:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - DB_URL=postgresql+asyncpg://postgres:postgres@db:5432/tos_mvp
+    restart: unless-stopped
+
 volumes:
   postgres_data:
