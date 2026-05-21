@@ -152,6 +152,25 @@ def register_handlers(dp: Dispatcher):
         async with async_session_factory() as db:
             await callback.handle_callback(cb, db, context)
 
+    # === Обработка всех остальных сообщений (для новых пользователей) ===
+    @dp.message_created()
+    async def on_any_message(event: MessageCreated):
+        """Обработка любых сообщений для проверки авторизации пользователя"""
+        chat_id = event.message.recipient.chat_id
+        logger.info(f"[main] on_any_message: chat_id={chat_id}, text={event.message.body.text[:50] if event.message.body.text else 'None'}")
+        
+        async with async_session_factory() as db:
+            # Получаем пользователя из БД
+            from src.database.crud import get_user_by_id
+            user = await get_user_by_id(db, chat_id)
+            
+            # Если пользователя нет или у него нет телефона - он не авторизован
+            if not user or not user.phone:
+                await event.message.answer(
+                    "👋 Привет! Я бот для подачи инициатив жителей.\n"
+                    "Чтобы начать работу, пожалуйста, введите команду /start"
+                )
+
 async def main():
     """Точка входа"""
     logger.info(f"🔑 Используется токен: {settings.BOT_TOKEN[:20]}...")
