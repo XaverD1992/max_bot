@@ -33,4 +33,4 @@ allow-direct-references = true
 packages = ["src"]
 
 [tool.uv.sources]
-maxapi = { git = "https://github.com/max-messenger/max-botapi-python.git", rev = "main" }
+maxapi = { path = "max-botapi-python", editable = true }

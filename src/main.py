@@ -154,6 +154,9 @@ def register_handlers(dp: Dispatcher):
 
 async def main():
     """Точка входа"""
+    logger.info(f"🔑 Используется токен: {settings.BOT_TOKEN[:20]}...")
+    logger.info(f"🔑 Длина токена: {len(settings.BOT_TOKEN)}")
+    
     bot = Bot(token=settings.BOT_TOKEN)
     dp = Dispatcher()
     
