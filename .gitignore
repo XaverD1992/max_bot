@@ -7,3 +7,10 @@ env/
 venv/
 .venv/
 bot.log
+.env
+max-botapi-python/
+uv.lock
+.idea/
+.vscode/
+*.db
+*.sqlite
