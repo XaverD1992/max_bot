@@ -10,6 +10,7 @@ COPY pyproject.toml ./
 RUN uv pip install --system .
 
 COPY src ./src
+COPY scripts ./scripts
 COPY alembic ./alembic
 COPY alembic.ini ./
 COPY docker-entrypoint.sh /usr/local/bin/
