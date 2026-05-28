@@ -21,9 +21,9 @@ async def handle_list(event: MessageCreated, db: AsyncSession):
         return
     
     lines = ["📋 **Одобренные инициативы:**\n"]
-    for i, init in enumerate(initiatives, 1):
+    for init in initiatives:
         lines.append(
-            f"{i}. **{init.title}** (#{init.id})\n"
+            f"**{init.title}** (#{init.id})\n"
             f"   📍 {init.location}\n"
             f"   👍 Голосов: {init.votes_count}\n"
             f"   /vote {init.id} — проголосовать"
