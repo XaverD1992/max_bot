@@ -8,7 +8,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-       - "5433:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -24,9 +24,11 @@ services:
         condition: service_healthy
     env_file:
       - .env
-    environment:
-      - DB_URL=postgresql+asyncpg://postgres:postgres@db:5432/tos_mvp
+
     restart: unless-stopped
+    # Expose port 8080 only on localhost for safety; access via reverse proxy (nginx) for webhook mode
+    ports:
+      - "127.0.0.1:8080:8080"
 
 volumes:
   postgres_data:
