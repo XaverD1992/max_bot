@@ -4,6 +4,7 @@ from maxapi.context import MemoryContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.logging_config import logger
 from src.bot.states import IdeaStates, ModerationStates
+from src.bot.keyboards import COMMANDS_HELP
 from src.database.crud import (
     get_initiative_by_id, 
     update_initiative_status,
@@ -49,7 +50,7 @@ async def handle_callback(callback: MessageCallback, db: AsyncSession, context: 
     elif payload == "cmd_back":
         await context.clear()
         await callback.answer()
-        await callback.message.answer("↩️ Возврат в главное меню.\nДоступные команды: /idea, /list, /vote")
+        await callback.message.answer("↩️ Возврат в главное меню.\n" + COMMANDS_HELP)
     else:
         logger.warning(f"[handle_callback] Неизвестный payload: {payload} для chat_id={chat_id}")
 
@@ -172,14 +173,10 @@ async def _handle_idea_confirm(callback: MessageCallback, db: AsyncSession,
     
     await callback.message.answer(
         f"✅ Инициатива #{initiative.id} отправлена на модерацию!\n"
-        f"Вы получите уведомление о решении.\n\n"
-        f"📋 Доступные команды:\n"
-        f"/idea — подать инициативу\n"
-        f"/list — посмотреть одобренные инициативы\n"
-        f"/vote [номер] — проголосовать\n"
-        f"/status — статус последней инициативы\n"
-        f"/status [номер] — статус конкретной инициативы"
+        f"Вы получите уведомление о решении."
     )
+    
+    await callback.message.answer(COMMANDS_HELP)
     
     await notify_moderators(db, callback.bot, initiative)
     logger.info(f"[handle_idea_confirm] Инициатива #{initiative.id} уведомлена модераторов")

@@ -12,6 +12,7 @@ from src.logging_config import logger
 from src.database.session import async_session_factory
 from src.handlers import start, idea, moderation, list as list_handler, vote, admin, callback, status
 from src.bot.states import IdeaStates, ModerationStates, StartStates
+from src.bot.keyboards import COMMANDS_HELP
 
 def register_handlers(dp: Dispatcher):
     """Регистрация всех обработчиков событий"""
@@ -177,14 +178,7 @@ def register_handlers(dp: Dispatcher):
                     "Чтобы начать работу, пожалуйста, введите команду /start"
                 )
             else:
-                await event.message.answer(
-                    "📋 Доступные команды:\n"
-                    "/idea — подать инициативу\n"
-                    "/list — посмотреть одобренные инициативы\n"
-                    "/vote [номер] — проголосовать\n"
-                    "/status — статус последней инициативы\n"
-                    "/status [номер] — статус конкретной инициативы"
-                )
+                await event.message.answer(COMMANDS_HELP)
 
 async def main():
     """Точка входа"""

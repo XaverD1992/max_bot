@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.logging_config import logger
 from src.database.crud import get_or_create_user
 from src.bot.states import StartStates
+from src.bot.keyboards import COMMANDS_HELP
 
 
 async def handle_start(event: MessageCreated, db: AsyncSession, context: MemoryContext):
@@ -27,14 +28,9 @@ async def handle_start(event: MessageCreated, db: AsyncSession, context: MemoryC
         logger.info(f"Sending answer for user with phone")
         try:
             await event.message.answer(
-                f"👋 Привет, {name}! Ваш номер уже привязан: `{db_user.phone}`\n\n"
-                f"📋 Доступные команды:\n"
-                f"/idea — подать инициативу\n"
-                f"/list — посмотреть одобренные инициативы\n"
-                f"/vote [номер] — проголосовать\n"
-                f"/status — статус последней инициативы\n"
-                f"/status [номер] — статус конкретной инициативы"
+                f"👋 Привет, {name}! Ваш номер уже привязан: `{db_user.phone}`"
             )
+            await event.message.answer(COMMANDS_HELP)
             logger.info(f"Answer sent successfully")
         except Exception as e:
             logger.error(f"Error sending answer: {e}")
@@ -67,11 +63,6 @@ async def handle_phone_input(event: MessageCreated, db: AsyncSession, context: M
 
     await event.message.answer(
         f"✅ Номер `{text}` успешно привязан!\n\n"
-        f"📋 Доступные команды:\n"
-        f"/idea — подать инициативу\n"
-        f"/list — посмотреть одобренные инициативы\n"
-        f"/vote [номер] — проголосовать\n"
-        f"/status — статус последней инициативы\n"
-        f"/status [номер] — статус конкретной инициативы"
     )
+    await event.message.answer(COMMANDS_HELP)
     logger.info(f"Пользователь {event.message.recipient.chat_id} привязал телефон: {text}")
