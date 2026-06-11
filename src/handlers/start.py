@@ -31,7 +31,9 @@ async def handle_start(event: MessageCreated, db: AsyncSession, context: MemoryC
                 f"📋 Доступные команды:\n"
                 f"/idea — подать инициативу\n"
                 f"/list — посмотреть одобренные инициативы\n"
-                f"/vote [номер] — проголосовать"
+                f"/vote [номер] — проголосовать\n"
+                f"/status — статус последней инициативы\n"
+                f"/status [номер] — статус конкретной инициативы"
             )
             logger.info(f"Answer sent successfully")
         except Exception as e:
@@ -68,6 +70,8 @@ async def handle_phone_input(event: MessageCreated, db: AsyncSession, context: M
         f"📋 Доступные команды:\n"
         f"/idea — подать инициативу\n"
         f"/list — посмотреть одобренные инициативы\n"
-        f"/vote [номер] — проголосовать"
+        f"/vote [номер] — проголосовать\n"
+        f"/status — статус последней инициативы\n"
+        f"/status [номер] — статус конкретной инициативы"
     )
     logger.info(f"Пользователь {event.message.recipient.chat_id} привязал телефон: {text}")
