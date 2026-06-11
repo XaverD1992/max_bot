@@ -3,7 +3,6 @@
 Поддерживает polling и webhook режимы через переменную окружения RUN_MODE.
 """
 import asyncio
-import logging
 from maxapi import Bot, Dispatcher, F
 from maxapi.types import BotStarted, Command, MessageCreated, MessageCallback
 from maxapi.context import MemoryContext
@@ -11,7 +10,7 @@ from maxapi.context import MemoryContext
 from src.config import settings
 from src.logging_config import logger
 from src.database.session import async_session_factory
-from src.handlers import start, idea, moderation, list as list_handler, vote, admin, callback
+from src.handlers import start, idea, moderation, list as list_handler, vote, admin, callback, status
 from src.bot.states import IdeaStates, ModerationStates, StartStates
 
 def register_handlers(dp: Dispatcher):
@@ -47,6 +46,13 @@ def register_handlers(dp: Dispatcher):
         logger.info(f"[main] on_vote: chat_id={event.message.recipient.chat_id}")
         async with async_session_factory() as db:
             await vote.handle_vote(event, db)
+     
+    # === Статус инициативы: /status ===
+    @dp.message_created(Command('status'))
+    async def on_status(event: MessageCreated):
+        logger.info(f"[main] on_status: chat_id={event.message.recipient.chat_id}")
+        async with async_session_factory() as db:
+            await status.handle_status(event, db)
     
     # === Админ-команда: /set_role ===
     @dp.message_created(Command('set_role'))
@@ -175,7 +181,8 @@ def register_handlers(dp: Dispatcher):
                     "📋 Доступные команды:\n"
                     "/idea — подать инициативу\n"
                     "/list — посмотреть одобренные инициативы\n"
-                    "/vote [номер] — проголосовать"
+                    "/vote [номер] — проголосовать\n"
+                    "/status — статус ваших инициатив"
                 )
 
 async def main():
