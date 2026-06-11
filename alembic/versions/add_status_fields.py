@@ -18,9 +18,9 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    # Добавляем новые значения в enum initiativestatus
-    op.execute("ALTER TYPE initiativestatus ADD VALUE IF NOT EXISTS 'in_progress'")
-    op.execute("ALTER TYPE initiativestatus ADD VALUE IF NOT EXISTS 'completed'")
+    # Добавляем новые значения в enum initiativestatus (UPPERCASE для совместимости с оригинальной миграцией)
+    op.execute("ALTER TYPE initiativestatus ADD VALUE IF NOT EXISTS 'IN_PROGRESS'")
+    op.execute("ALTER TYPE initiativestatus ADD VALUE IF NOT EXISTS 'COMPLETED'")
     
     # Добавляем колонку для причины отклонения
     op.add_column('initiatives', sa.Column('reject_reason', sa.Text(), nullable=True))
