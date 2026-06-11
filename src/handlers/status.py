@@ -30,10 +30,6 @@ async def handle_status(event: MessageCreated, db: AsyncSession):
         if not initiative:
             await event.message.answer(f"❌ Инициатива #{initiative_id} не найдена")
             return
-        
-        if initiative.author_id != chat_id:
-            await event.message.answer("❌ Эта инициатива вам не принадлежит")
-            return
     else:
         # /status — последняя инициатива пользователя
         initiatives = await get_user_initiatives(db, chat_id, limit=1)
