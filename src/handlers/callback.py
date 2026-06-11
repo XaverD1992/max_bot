@@ -172,7 +172,13 @@ async def _handle_idea_confirm(callback: MessageCallback, db: AsyncSession,
     
     await callback.message.answer(
         f"✅ Инициатива #{initiative.id} отправлена на модерацию!\n"
-        f"Вы получите уведомление о решении."
+        f"Вы получите уведомление о решении.\n\n"
+        f"📋 Доступные команды:\n"
+        f"/idea — подать инициативу\n"
+        f"/list — посмотреть одобренные инициативы\n"
+        f"/vote [номер] — проголосовать\n"
+        f"/status — статус последней инициативы\n"
+        f"/status [номер] — статус конкретной инициативы"
     )
     
     await notify_moderators(db, callback.bot, initiative)
