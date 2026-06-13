@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.logging_config import logger
 from src.database.crud import get_user_initiatives, get_initiative_by_id
 from src.models.initiative import InitiativeStatus
+from src.bot.keyboards import COMMANDS_HELP
 
 STATUS_LABELS = {
     InitiativeStatus.PENDING: "🕒 На модерации",
@@ -29,6 +30,7 @@ async def handle_status(event: MessageCreated, db: AsyncSession):
         
         if not initiative:
             await event.message.answer(f"❌ Инициатива #{initiative_id} не найдена")
+            await event.message.answer(COMMANDS_HELP)
             return
     else:
         # /status — последняя инициатива пользователя
@@ -36,6 +38,7 @@ async def handle_status(event: MessageCreated, db: AsyncSession):
         
         if not initiatives:
             await event.message.answer("📭 Вы ещё не подавали инициативы. Используйте /idea")
+            await event.message.answer(COMMANDS_HELP)
             return
         
         initiative = initiatives[0]
@@ -54,4 +57,5 @@ async def handle_status(event: MessageCreated, db: AsyncSession):
     lines.append(f"   👍 Голосов: {initiative.votes_count}")
     
     await event.message.answer("\n".join(lines), parse_mode=ParseMode.MARKDOWN)
+    await event.message.answer(COMMANDS_HELP)
     logger.info(f"[status] Инициатива #{initiative.id} пользователю {chat_id}: {status_label}")

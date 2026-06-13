@@ -15,6 +15,7 @@ from src.database.crud import (
 )
 from src.models.initiative import InitiativeStatus
 from src.models.user import UserRole
+from src.bot.keyboards import COMMANDS_HELP
 from src.bot.states import ModerationStates
 
 
@@ -45,6 +46,7 @@ async def handle_reject_reason(event: MessageCreated, db: AsyncSession, context:
     if not initiative_id:
         logger.error("[handle_reject_reason] NO_INITIATIVE_ID in context")
         await event.message.answer("❌ Ошибка: не указан номер инициативы")
+        await event.message.answer(COMMANDS_HELP)
         await context.clear()
         return
     
@@ -56,6 +58,7 @@ async def handle_reject_reason(event: MessageCreated, db: AsyncSession, context:
     if not initiative:
         logger.error(f"[handle_reject_reason] Initiative #{initiative_id} NOT FOUND")
         await event.message.answer("❌ Инициатива не найдена (возможно, уже обработана)")
+        await event.message.answer(COMMANDS_HELP)
         await context.clear()
         return
     
@@ -65,6 +68,7 @@ async def handle_reject_reason(event: MessageCreated, db: AsyncSession, context:
     if initiative.status != InitiativeStatus.PENDING:
         logger.warning(f"[handle_reject_reason] Initiative already processed, status={initiative.status}")
         await event.message.answer("⚠️ Эта инициатива уже была обработана")
+        await event.message.answer(COMMANDS_HELP)
         await context.clear()
         return
     
@@ -76,6 +80,7 @@ async def handle_reject_reason(event: MessageCreated, db: AsyncSession, context:
     if user and user.role not in [UserRole.MODERATOR, UserRole.ADMIN]:
         logger.warning(f"[handle_reject_reason] INSUFFICIENT_PERMISSIONS: role={user.role}")
         await event.message.answer("❌ У вас нет прав для этого действия")
+        await event.message.answer(COMMANDS_HELP)
         return
     
     logger.info(f"[handle_reject_reason] Permission check passed, user role={user.role if user else 'None'}")
@@ -98,6 +103,7 @@ async def handle_reject_reason(event: MessageCreated, db: AsyncSession, context:
             f"❌ Инициатива #{initiative.id} «{initiative.title}» отклонена.\n"
             f"Автору отправлено уведомление."
         )
+        await event.message.answer(COMMANDS_HELP)
         logger.info("[handle_reject_reason] Moderator notification sent successfully")
     except Exception as e:
         logger.error(f"[handle_reject_reason] FAILED to notify moderator: {e}", exc_info=True)

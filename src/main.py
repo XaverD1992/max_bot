@@ -78,6 +78,7 @@ def register_handlers(dp: Dispatcher):
             moderators = await get_moderators(db)
             if not moderators:
                 await event.message.answer("❌ Нет модераторов в базе! Сначала добавьте модератора через /set_role")
+                await event.message.answer(COMMANDS_HELP)
                 return
              
             initiative = await create_initiative(
@@ -90,6 +91,7 @@ def register_handlers(dp: Dispatcher):
             )
              
             await notify_moderators(db, event.bot, initiative)
+            await event.message.answer(COMMANDS_HELP)
             # await event.message.answer(f"✅ Тестовая инициатива #{initiative.id} создана и модераторам отправлено уведомление")
     
     # === Подача инициативы: /idea ===
