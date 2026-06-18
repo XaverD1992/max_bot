@@ -10,29 +10,31 @@ from src.database.crud import (
     get_or_create_user
 )
 from src.models.initiative import InitiativeStatus
-from src.bot.keyboards import COMMANDS_HELP
+from src.bot.keyboards import make_commands_keyboard
 
 async def handle_vote(event: MessageCreated, db: AsyncSession):
     """Обработка команды /vote [id] — голосование за инициативу"""
     chat_id = event.message.recipient.chat_id
     text = event.message.body.text.strip() if event.message.body.text else ""
     
-    # Парсим номер инициативы: /vote 123
-    match = re.match(r"^/vote\s+(\d+)$", text, re.I)
-    if not match:
-        await event.message.answer(
-            "❌ Неверный формат.\nИспользуйте: `/vote 123` (где 123 — номер инициативы)",
-            parse_mode=ParseMode.MARKDOWN
-        )
-        await event.message.answer(COMMANDS_HELP)
-        return
+    if re.match(r"^\d+$", text):
+        initiative_id = int(text)
+    else:
+        match = re.match(r"^/vote\s+(\d+)$", text, re.I)
+        if not match:
+            await event.message.answer(
+                "❌ Неверный формат.\nИспользуйте: `/vote 123` (где 123 — номер инициативы)",
+                parse_mode=ParseMode.MARKDOWN
+            )
+            await event.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
+            return
+        initiative_id = int(match.group(1))
     
-    initiative_id = int(match.group(1))
     initiative = await get_initiative_by_id(db, initiative_id)
     
     if not initiative:
         await event.message.answer(f"❌ Инициатива #{initiative_id} не найдена")
-        await event.message.answer(COMMANDS_HELP)
+        await event.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
         return
     
     if initiative.status != InitiativeStatus.APPROVED:
@@ -40,7 +42,7 @@ async def handle_vote(event: MessageCreated, db: AsyncSession):
             "⚠️ За эту инициативу нельзя проголосовать "
             "(она ещё не одобрена или отклонена)"
         )
-        await event.message.answer(COMMANDS_HELP)
+        await event.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
         return
     
     # Получаем или создаём пользователя
@@ -52,7 +54,7 @@ async def handle_vote(event: MessageCreated, db: AsyncSession):
             f"✅ Вы уже проголосовали за «{initiative.title}».\n"
             f"Текущий счёт: {initiative.votes_count} голосов"
         )
-        await event.message.answer(COMMANDS_HELP)
+        await event.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
         return
     
     # Добавляем голос
@@ -62,8 +64,8 @@ async def handle_vote(event: MessageCreated, db: AsyncSession):
             f"✅ Ваш голос за «{initiative.title}» принят!\n"
             f"📊 Всего голосов: {initiative.votes_count + 1}"
         )
-        await event.message.answer(COMMANDS_HELP)
+        await event.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
         logger.info(f"Голос от {chat_id} за инициативу #{initiative_id}")
     else:
         await event.message.answer("❌ Не удалось записать голос. Попробуйте позже.")
-        await event.message.answer(COMMANDS_HELP)
+        await event.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())

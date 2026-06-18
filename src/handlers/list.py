@@ -3,7 +3,7 @@ from maxapi.enums.parse_mode import ParseMode
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.logging_config import logger
 from src.database.crud import get_approved_initiatives
-from src.bot.keyboards import COMMANDS_HELP
+from src.bot.keyboards import make_commands_keyboard
 
 async def handle_list(event: MessageCreated, db: AsyncSession):
     """Обработка команды /list — показ всех одобренных инициатив"""
@@ -19,7 +19,7 @@ async def handle_list(event: MessageCreated, db: AsyncSession):
             "📭 Пока нет одобренных инициатив.\n"
             "Станьте первым — подайте свою идею командой /idea!"
         )
-        await event.message.answer(COMMANDS_HELP)
+        await event.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
         return
     
     lines = ["📋 **Одобренные инициативы:**\n"]
@@ -32,5 +32,5 @@ async def handle_list(event: MessageCreated, db: AsyncSession):
         )
     
     await event.message.answer("\n\n".join(lines), parse_mode=ParseMode.MARKDOWN)
-    await event.message.answer(COMMANDS_HELP)
+    await event.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
     logger.info(f"[list] ответ отправлен пользователю {chat_id}")

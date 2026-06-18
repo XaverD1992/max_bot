@@ -11,8 +11,8 @@ from src.config import settings
 from src.logging_config import logger
 from src.database.session import async_session_factory
 from src.handlers import start, idea, moderation, list as list_handler, vote, admin, callback, status
-from src.bot.states import IdeaStates, ModerationStates, StartStates
-from src.bot.keyboards import COMMANDS_HELP
+from src.bot.states import IdeaStates, ModerationStates, StartStates, VoteStates, StatusStates
+from src.bot.keyboards import make_commands_keyboard
 
 def register_handlers(dp: Dispatcher):
     """Регистрация всех обработчиков событий"""
@@ -77,8 +77,10 @@ def register_handlers(dp: Dispatcher):
             # Проверяем, есть ли модераторы
             moderators = await get_moderators(db)
             if not moderators:
-                await event.message.answer("❌ Нет модераторов в базе! Сначала добавьте модератора через /set_role")
-                await event.message.answer(COMMANDS_HELP)
+                await event.message.answer(
+                    "❌ Нет модераторов в базе! Сначала добавьте модератора через /set_role"
+                )
+                await event.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
                 return
              
             initiative = await create_initiative(
@@ -91,7 +93,7 @@ def register_handlers(dp: Dispatcher):
             )
              
             await notify_moderators(db, event.bot, initiative)
-            await event.message.answer(COMMANDS_HELP)
+            await event.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
             # await event.message.answer(f"✅ Тестовая инициатива #{initiative.id} создана и модераторам отправлено уведомление")
     
     # === Подача инициативы: /idea ===
@@ -157,9 +159,23 @@ def register_handlers(dp: Dispatcher):
     # === Обработка callback (кнопки) ===
     @dp.message_callback()
     async def on_callback(cb: MessageCallback, context: MemoryContext):
-        logger.info(f"[main] on_callback: chat_id={cb.message.recipient.chat_id}")
+        logger.info(f"[main] on_callback: chat_id={cb.message.recipient.chat_id}, payload={cb.callback.payload}")
         async with async_session_factory() as db:
             await callback.handle_callback(cb, db, context)
+
+    @dp.message_created(F.message.body.text, VoteStates.WAITING_ID)
+    async def on_vote_id_input(event: MessageCreated, context: MemoryContext):
+        logger.info(f"[main] on_vote_id_input: chat_id={event.message.recipient.chat_id}")
+        async with async_session_factory() as db:
+            await vote.handle_vote(event, db)
+            await context.clear()
+
+    @dp.message_created(F.message.body.text, StatusStates.WAITING_ID)
+    async def on_status_id_input(event: MessageCreated, context: MemoryContext):
+        logger.info(f"[main] on_status_id_input: chat_id={event.message.recipient.chat_id}")
+        async with async_session_factory() as db:
+            await status.handle_status(event, db)
+            await context.clear()
 
     # === Обработка всех остальных сообщений (для новых пользователей) ===
     @dp.message_created()
@@ -173,14 +189,13 @@ def register_handlers(dp: Dispatcher):
             from src.database.crud import get_user_by_id
             user = await get_user_by_id(db, chat_id)
             
-            # Если пользователя нет или у него нет телефона - он не авторизован
             if not user or not user.phone:
                 await event.message.answer(
                     "👋 Привет! Я бот для подачи инициатив жителей.\n"
                     "Чтобы начать работу, пожалуйста, введите команду /start"
                 )
             else:
-                await event.message.answer(COMMANDS_HELP)
+                await event.message.answer("📋 Доступные команды:", attachments=[make_commands_keyboard().pack()])
 
 async def main():
     """Точка входа"""

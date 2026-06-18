@@ -16,3 +16,11 @@ class StartStates(StatesGroup):
 
 class ModerationStates(StatesGroup):
     WAITING_REJECT_REASON = State()
+
+
+class VoteStates(StatesGroup):
+    WAITING_ID = State()
+
+
+class StatusStates(StatesGroup):
+    WAITING_ID = State()

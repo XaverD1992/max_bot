@@ -9,6 +9,17 @@ COMMANDS_HELP = (
     "/status [номер] — статус конкретной инициативы"
 )
 
+def make_commands_keyboard() -> ButtonsPayload:
+    """Инлайн-клавиатура со всеми командами бота"""
+    buttons = [
+        [CallbackButton(text="/idea — подать инициативу", payload="cmd:/idea")],
+        [CallbackButton(text="/list — посмотреть одобренные инициативы", payload="cmd:/list")],
+        [CallbackButton(text="/vote — проголосовать", payload="input:/vote")],
+        [CallbackButton(text="/status — статус последней инициативы", payload="cmd:/status")],
+        [CallbackButton(text="/status [номер] — статус конкретной инициативы", payload="input:/status")],
+    ]
+    return ButtonsPayload(buttons=buttons)
+
 def make_moderation_keyboard(initiative_id: int) -> ButtonsPayload:
     """Inline-клавиатура для модератора: ✅ Одобрить / ❌ Отклонить"""
     buttons = [

@@ -5,7 +5,7 @@ from src.config import settings
 from src.logging_config import logger
 from src.database.crud import get_user_by_id, set_user_role
 from src.models.user import UserRole
-from src.bot.keyboards import COMMANDS_HELP
+from src.bot.keyboards import make_commands_keyboard
 
 async def handle_set_role(event: MessageCreated, db: AsyncSession):
     """Админ-команда: /set_role @username moderator|admin|resident"""
@@ -14,7 +14,7 @@ async def handle_set_role(event: MessageCreated, db: AsyncSession):
     # Проверка: только админы из ADMIN_USER_IDS
     if chat_id not in settings.ADMIN_USER_IDS:
         await event.message.answer("❌ У вас нет прав для этой команды")
-        await event.message.answer(COMMANDS_HELP)
+        await event.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
         return
     
     text = event.message.body.text.strip() if event.message.body.text else ""
@@ -26,7 +26,7 @@ async def handle_set_role(event: MessageCreated, db: AsyncSession):
             "Роли: resident, moderator, admin",
             parse_mode=ParseMode.MARKDOWN
         )
-        await event.message.answer(COMMANDS_HELP)
+        await event.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
         return
     
     try:
@@ -37,16 +37,16 @@ async def handle_set_role(event: MessageCreated, db: AsyncSession):
         await event.message.answer(
             "❌ Ошибка: chat_id должен быть числом, а роль — одной из: resident, moderator, admin"
         )
-        await event.message.answer(COMMANDS_HELP)
+        await event.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
         return
     
     user = await get_user_by_id(db, target_chat_id)
     if not user:
         await event.message.answer(f"❌ Пользователь {target_chat_id} не найден в базе")
-        await event.message.answer(COMMANDS_HELP)
+        await event.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
         return
     
     await set_user_role(db, target_chat_id, role)
     await event.message.answer(f"✅ Пользователю {target_chat_id} назначена роль: {role.value}")
-    await event.message.answer(COMMANDS_HELP)
+    await event.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
     logger.info(f"Админ {chat_id} изменил роль пользователя {target_chat_id} на {role.value}")
