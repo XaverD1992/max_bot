@@ -28,7 +28,7 @@ async def handle_status(event: MessageCreated, db: AsyncSession):
         initiative = await get_initiative_by_id(db, initiative_id)
         if not initiative:
             await event.message.answer(f"❌ Инициатива #{initiative_id} не найдена")
-            await event.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
+            await event.message.answer("📋 Доступные команды:", attachments=[make_commands_keyboard().pack()])
             return
     else:
         match = re.match(r"^/status\s*(\d+)?$", text, re.I)
@@ -37,7 +37,7 @@ async def handle_status(event: MessageCreated, db: AsyncSession):
             initiative = await get_initiative_by_id(db, initiative_id)
             if not initiative:
                 await event.message.answer(f"❌ Инициатива #{initiative_id} не найдена")
-                await event.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
+                await event.message.answer("📋 Доступные команды:", attachments=[make_commands_keyboard().pack()])
                 return
         else:
             initiative = None
@@ -46,7 +46,7 @@ async def handle_status(event: MessageCreated, db: AsyncSession):
         initiatives = await get_user_initiatives(db, chat_id, limit=1)
         if not initiatives:
             await event.message.answer("📭 Вы ещё не подавали инициативы. Используйте /idea")
-            await event.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
+            await event.message.answer("📋 Доступные команды:", attachments=[make_commands_keyboard().pack()])
             return
         initiative = initiatives[0]
     

@@ -62,5 +62,5 @@ async def handle_phone_input(event: MessageCreated, db: AsyncSession, context: M
     await event.message.answer(
         f"✅ Номер `{text}` успешно привязан!\n\n"
     )
-    await event.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
+    await event.message.answer("📋 Доступные команды:", attachments=[make_commands_keyboard().pack()])
     logger.info(f"Пользователь {event.message.recipient.chat_id} привязал телефон: {text}")

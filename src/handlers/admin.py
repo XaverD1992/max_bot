@@ -14,7 +14,7 @@ async def handle_set_role(event: MessageCreated, db: AsyncSession):
     # Проверка: только админы из ADMIN_USER_IDS
     if chat_id not in settings.ADMIN_USER_IDS:
         await event.message.answer("❌ У вас нет прав для этой команды")
-        await event.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
+        await event.message.answer("📋 Доступные команды:", attachments=[make_commands_keyboard().pack()])
         return
     
     text = event.message.body.text.strip() if event.message.body.text else ""
@@ -26,7 +26,7 @@ async def handle_set_role(event: MessageCreated, db: AsyncSession):
             "Роли: resident, moderator, admin",
             parse_mode=ParseMode.MARKDOWN
         )
-        await event.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
+        await event.message.answer("📋 Доступные команды:", attachments=[make_commands_keyboard().pack()])
         return
     
     try:
@@ -37,13 +37,13 @@ async def handle_set_role(event: MessageCreated, db: AsyncSession):
         await event.message.answer(
             "❌ Ошибка: chat_id должен быть числом, а роль — одной из: resident, moderator, admin"
         )
-        await event.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
+        await event.message.answer("📋 Доступные команды:", attachments=[make_commands_keyboard().pack()])
         return
     
     user = await get_user_by_id(db, target_chat_id)
     if not user:
         await event.message.answer(f"❌ Пользователь {target_chat_id} не найден в базе")
-        await event.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
+        await event.message.answer("📋 Доступные команды:", attachments=[make_commands_keyboard().pack()])
         return
     
     await set_user_role(db, target_chat_id, role)

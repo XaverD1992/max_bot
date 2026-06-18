@@ -158,7 +158,7 @@ async def handle_callback(callback: MessageCallback, db: AsyncSession, context: 
         await context.clear()
         await callback.answer()
         await callback.message.answer("↩️ Возврат в главное меню.")
-        await callback.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
+        await callback.message.answer("📋 Доступные команды:", attachments=[make_commands_keyboard().pack()])
         return
     else:
         logger.warning(f"[handle_callback] НЕИЗВЕСТНЫЙ payload: '{payload}' для chat_id={chat_id}")
@@ -175,7 +175,7 @@ async def _handle_moderation_action(callback: MessageCallback, db: AsyncSession,
     if user is None:
         logger.warning(f"[_handle_moderation_action] Пользователь chat_id={chat_id} не найден в БД")
         await callback.answer("❌ Пользователь не найден", show_alert=True)
-        await callback.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
+        await callback.message.answer("📋 Доступные команды:", attachments=[make_commands_keyboard().pack()])
         return
 
     logger.info(f"[_handle_moderation_action] Пользователь chat_id={chat_id} — роль: {user.role}")
@@ -183,14 +183,14 @@ async def _handle_moderation_action(callback: MessageCallback, db: AsyncSession,
     if user.role not in [UserRole.MODERATOR, UserRole.ADMIN]:
         logger.warning(f"[_handle_moderation_action] chat_id={chat_id} не имеет прав (роль={user.role})")
         await callback.answer("❌ Нет прав", show_alert=True)
-        await callback.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
+        await callback.message.answer("📋 Доступные команды:", attachments=[make_commands_keyboard().pack()])
         return
 
     initiative = await get_initiative_by_id(db, initiative_id)
     if not initiative:
         logger.warning(f"[_handle_moderation_action] Инициатива #{initiative_id} не найдена в БД")
         await callback.answer("⚠️ Инициатива не найдена", show_alert=True)
-        await callback.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
+        await callback.message.answer("📋 Доступные команды:", attachments=[make_commands_keyboard().pack()])
         return
 
     logger.info(f"[_handle_moderation_action] Инициатива #{initiative_id} статус: {initiative.status}")
@@ -198,7 +198,7 @@ async def _handle_moderation_action(callback: MessageCallback, db: AsyncSession,
     if initiative.status != InitiativeStatus.PENDING:
         logger.warning(f"[_handle_moderation_action] Инициатива #{initiative_id} уже обработана (статус={initiative.status})")
         await callback.answer("⚠️ Инициатива уже обработана", show_alert=True)
-        await callback.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
+        await callback.message.answer("📋 Доступные команды:", attachments=[make_commands_keyboard().pack()])
         return
 
     if approve:
@@ -206,7 +206,7 @@ async def _handle_moderation_action(callback: MessageCallback, db: AsyncSession,
         logger.info(f"[_handle_moderation_action] Инициатива #{initiative_id} статус изменён на APPROVED")
         # await callback.message.answer("✅ Одобрено")
         await callback.message.answer(f"✅ Инициатива #{initiative_id} «{initiative.title}» одобрена.")
-        await callback.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
+        await callback.message.answer("📋 Доступные команды:", attachments=[make_commands_keyboard().pack()])
         try:
             await callback.bot.send_message(
                 chat_id=initiative.author_id,
@@ -257,7 +257,7 @@ async def _handle_idea_confirm(callback: MessageCallback, db: AsyncSession,
         logger.info(f"[handle_idea_confirm] Пользователь {chat_id} отменил подачу")
         await context.clear()
         await callback.message.answer("❌ Подача инициативы отменена.")
-        await callback.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
+        await callback.message.answer("📋 Доступные команды:", attachments=[make_commands_keyboard().pack()])
         return
     
     logger.info(f"[handle_idea_confirm] Пользователь {chat_id} подтверждает отправку")
@@ -275,7 +275,7 @@ async def _handle_idea_confirm(callback: MessageCallback, db: AsyncSession,
         logger.info(f"Category enum: {category_enum}, value: {category_enum.value}")
     except ValueError:
         await callback.message.answer("❌ Ошибка: неверная категория")
-        await callback.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
+        await callback.message.answer("📋 Доступные команды:", attachments=[make_commands_keyboard().pack()])
         return
     
     initiative = await create_initiative(

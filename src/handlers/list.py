@@ -19,7 +19,7 @@ async def handle_list(event: MessageCreated, db: AsyncSession):
             "📭 Пока нет одобренных инициатив.\n"
             "Станьте первым — подайте свою идею командой /idea!"
         )
-        await event.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
+        await event.message.answer("📋 Доступные команды:", attachments=[make_commands_keyboard().pack()])
         return
     
     lines = ["📋 **Одобренные инициативы:**\n"]

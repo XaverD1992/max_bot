@@ -80,7 +80,7 @@ def register_handlers(dp: Dispatcher):
                 await event.message.answer(
                     "❌ Нет модераторов в базе! Сначала добавьте модератора через /set_role"
                 )
-                await event.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
+                await event.message.answer("📋 Доступные команды:", attachments=[make_commands_keyboard().pack()])
                 return
              
             initiative = await create_initiative(
