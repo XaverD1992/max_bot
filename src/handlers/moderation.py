@@ -3,7 +3,6 @@
 - Обработка причины отклонения (текстовый ввод после нажатия ❌)
 - Вспомогательные функции для уведомлений
 """
-import logging
 from maxapi.types import MessageCreated
 from maxapi.context import MemoryContext
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,11 +10,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.logging_config import logger
 from src.database.crud import (
     get_initiative_by_id,
-    update_initiative_status,
+    update_initiative_status_with_reason,
     get_user_by_id
 )
 from src.models.initiative import InitiativeStatus
 from src.models.user import UserRole
+from src.bot.keyboards import make_commands_keyboard
 from src.bot.states import ModerationStates
 
 
@@ -37,26 +37,28 @@ async def handle_reject_reason(event: MessageCreated, db: AsyncSession, context:
         logger.warning(f"[handle_reject_reason] WRONG_STATE: expected waiting_reject_reason, got {state}")
         return
     
-    logger.info(f"[handle_reject_reason] State check passed")
+    logger.info("[handle_reject_reason] State check passed")
     
     data = await context.get_data()
     logger.info(f"[handle_reject_reason] Context data: {data}")
     
     initiative_id = data.get("initiative_id")
     if not initiative_id:
-        logger.error(f"[handle_reject_reason] NO_INITIATIVE_ID in context")
+        logger.error("[handle_reject_reason] NO_INITIATIVE_ID in context")
         await event.message.answer("❌ Ошибка: не указан номер инициативы")
+        await event.message.answer("📋 Доступные команды:", attachments=[make_commands_keyboard().pack()])
         await context.clear()
         return
     
     logger.info(f"[handle_reject_reason] Initiative ID: {initiative_id}")
     
     # Получаем инициативу
-    logger.info(f"[handle_reject_reason] Fetching initiative from DB...")
+    logger.info("[handle_reject_reason] Fetching initiative from DB...")
     initiative = await get_initiative_by_id(db, initiative_id)
     if not initiative:
         logger.error(f"[handle_reject_reason] Initiative #{initiative_id} NOT FOUND")
         await event.message.answer("❌ Инициатива не найдена (возможно, уже обработана)")
+        await event.message.answer("📋 Доступные команды:", attachments=[make_commands_keyboard().pack()])
         await context.clear()
         return
     
@@ -66,10 +68,11 @@ async def handle_reject_reason(event: MessageCreated, db: AsyncSession, context:
     if initiative.status != InitiativeStatus.PENDING:
         logger.warning(f"[handle_reject_reason] Initiative already processed, status={initiative.status}")
         await event.message.answer("⚠️ Эта инициатива уже была обработана")
+        await event.message.answer("📋 Доступные команды:", attachments=[make_commands_keyboard().pack()])
         await context.clear()
         return
     
-    logger.info(f"[handle_reject_reason] Status check passed (PENDING)")
+    logger.info("[handle_reject_reason] Status check passed (PENDING)")
     
     # Проверяем роль (на всякий случай)
     logger.info(f"[handle_reject_reason] Checking user role for chat_id={chat_id}")
@@ -77,6 +80,7 @@ async def handle_reject_reason(event: MessageCreated, db: AsyncSession, context:
     if user and user.role not in [UserRole.MODERATOR, UserRole.ADMIN]:
         logger.warning(f"[handle_reject_reason] INSUFFICIENT_PERMISSIONS: role={user.role}")
         await event.message.answer("❌ У вас нет прав для этого действия")
+        await event.message.answer("📋 Доступные команды:", attachments=[make_commands_keyboard().pack()])
         return
     
     logger.info(f"[handle_reject_reason] Permission check passed, user role={user.role if user else 'None'}")
@@ -85,12 +89,12 @@ async def handle_reject_reason(event: MessageCreated, db: AsyncSession, context:
     reason = text[:500]  # Ограничиваем длину
     logger.info(f"[handle_reject_reason] Rejecting with reason: '{reason[:100]}...'")
     
-    await update_initiative_status(db, initiative, InitiativeStatus.REJECTED)
+    await update_initiative_status_with_reason(db, initiative, InitiativeStatus.REJECTED, reason)
     logger.info(f"[handle_reject_reason] Initiative #{initiative_id} status updated to REJECTED")
     
     # Очищаем состояние
     await context.clear()
-    logger.info(f"[handle_reject_reason] Context cleared")
+    logger.info("[handle_reject_reason] Context cleared")
     
     # Уведомляем модератора
     logger.info(f"[handle_reject_reason] About to notify moderator chat_id={chat_id}")
@@ -99,7 +103,8 @@ async def handle_reject_reason(event: MessageCreated, db: AsyncSession, context:
             f"❌ Инициатива #{initiative.id} «{initiative.title}» отклонена.\n"
             f"Автору отправлено уведомление."
         )
-        logger.info(f"[handle_reject_reason] Moderator notification sent successfully")
+        await event.message.answer("📋 Доступные команды:", attachments=[make_commands_keyboard().pack()])
+        logger.info("[handle_reject_reason] Moderator notification sent successfully")
     except Exception as e:
         logger.error(f"[handle_reject_reason] FAILED to notify moderator: {e}", exc_info=True)
     

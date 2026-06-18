@@ -34,61 +34,73 @@ INITIATIVES = [
         "Ремонт дороги на ул. Ленина",
         "Дорога покрылась ямами после зимы, требуется асфальтирование.",
         InitiativeCategory.ROADS, "ул. Ленина, д. 10-25",
-        InitiativeStatus.APPROVED, 111111111,
+        InitiativeStatus.APPROVED, 111111111, None,
     ),
     (
         "Установка детской площадки в парке",
         "Нужно оборудовать новую площадку с горками и турниками для детей 3-12 лет.",
         InitiativeCategory.PLAYGROUNDS, "Центральный парк, северная часть",
-        InitiativeStatus.APPROVED, 444444444,
+        InitiativeStatus.APPROVED, 444444444, None,
     ),
     (
         "Замена уличного освещения на ул. Гагарина",
         "Фонари не работают полгода, жители устанавливают самодельные.",
         InitiativeCategory.LIGHTING, "ул. Гагарина, д. 5-15",
-        InitiativeStatus.APPROVED, 666666666,
+        InitiativeStatus.APPROVED, 666666666, None,
     ),
     (
         "Обустройство зоны отдыха у реки",
         "Установить скамейки и урны, высадить кустарники на набережной.",
         InitiativeCategory.IMPROVEMENT, "Набережная р. Москвы",
-        InitiativeStatus.APPROVED, 777777777,
+        InitiativeStatus.APPROVED, 777777777, None,
     ),
     (
         "Жалоба на отключение горячей воды",
         "Регулярно отключают ГВС без предупреждения, обращения в УК не помогают.",
         InitiativeCategory.UTILITIES, "ул. Садовая, д. 17",
-        InitiativeStatus.PENDING, 111111111,
+        InitiativeStatus.PENDING, 111111111, None,
     ),
     (
         "Установка ливневой канализации на ул. Садовой",
         "После дождя остаётся глубокая лужа, мешающая передвижению пешеходам.",
         InitiativeCategory.ROADS, "ул. Садовая, перекрёсток с ул. Пушкина",
-        InitiativeStatus.PENDING, 999999999,
+        InitiativeStatus.PENDING, 999999999, None,
     ),
     (
         "Отключение освещения в подъезде дома 33",
         "В подъезде не работает освещение уже полмесяца, угроза безопасности.",
         InitiativeCategory.LIGHTING, "ул. Мира, д. 33, подъезд N2",
-        InitiativeStatus.REJECTED, 444444444,
+        InitiativeStatus.REJECTED, 444444444, "Жалоба относится к УК, а не к муниципалитету",
     ),
     (
         "Ремонт крыши в доме 8",
         "Крыша протекает, требуется капитальный ремонт перед зимой.",
         InitiativeCategory.UTILITIES, "ул. Лесная, д. 8",
-        InitiativeStatus.APPROVED, 888888888,
+        InitiativeStatus.APPROVED, 888888888, None,
     ),
     (
         "Озеленение пустыря между домами 12 и 14",
         "Преобразовать пустырь в сквер с скамейками для жителей.",
         InitiativeCategory.IMPROVEMENT, "ул. Зелёная, между д. 12 и д. 14",
-        InitiativeStatus.PENDING, 555555555,
+        InitiativeStatus.PENDING, 555555555, None,
     ),
     (
         "Ямы на дороге у школы N5",
         "Дорога к школе покрыта ямами, опасность для детей и родителей.",
         InitiativeCategory.ROADS, "ул. Школьная, у школы N5",
-        InitiativeStatus.REJECTED, 999999999,
+        InitiativeStatus.REJECTED, 999999999, "Участок территории не входит в муниципальную надежду",
+    ),
+    (
+        "Установка новых мусорных баков в дворе",
+        "Текущие баки повреждены и не захватываются.",
+        InitiativeCategory.UTILITIES, "ул. Рабочая, д. 12",
+        InitiativeStatus.IN_PROGRESS, 777777777, None,
+    ),
+    (
+        "Благоустройство детской площадки в садике",
+        "Установка новых площадок и ремонт старого оборудования.",
+        InitiativeCategory.IMPROVEMENT, "Детский сад N4",
+        InitiativeStatus.COMPLETED, 111111111, None,
     ),
 ]
 
@@ -105,11 +117,12 @@ async def seed():
         print(f"added users: {len(USERS)}")
 
         # --- initiatives ---
-        for title, desc, cat, loc, status, author_id in INITIATIVES:
+        for title, desc, cat, loc, status, author_id, reject_reason in INITIATIVES:
             session.add(Initiative(
                 title=title, description=desc,
                 category=cat, location=loc,
                 status=status, author_id=author_id,
+                reject_reason=reject_reason,
             ))
         await session.commit()
         print(f"added initiatives: {len(INITIATIVES)}")

@@ -16,7 +16,7 @@ async def get_or_create_user(db: AsyncSession, chat_id: int, name: str = None, p
         logger.info(f"Creating new user {chat_id}")
         user = User(id=chat_id, name=name, phone=phone)
         db.add(user)
-        logger.info(f"Added to session")
+        logger.info("Added to session")
         await db.flush()
         await db.commit()  # Сохраняем нового пользователя
         logger.info(f"Committed, created new user: {chat_id}")
@@ -92,7 +92,7 @@ async def get_user_by_id(db: AsyncSession, chat_id: int) -> User | None:
 
 async def get_moderators(db: AsyncSession) -> list[User]:
     """Получить всех пользователей с ролью модератора или админа"""
-    logger.info(f"Вход в get_moderators")
+    logger.info("Вход в get_moderators")
     stmt = select(User).where(
         User.role.in_([UserRole.MODERATOR, UserRole.ADMIN])
     )
@@ -104,3 +104,19 @@ async def get_pending_initiatives(db: AsyncSession) -> list[Initiative]:
     stmt = select(Initiative).where(Initiative.status == InitiativeStatus.PENDING).options(selectinload(Initiative.votes))
     result = await db.execute(stmt)
     return list(result.scalars().all())
+
+async def get_user_initiatives(db: AsyncSession, chat_id: int, limit: int = 10) -> list[Initiative]:
+    """Получить инициативы конкретного пользователя"""
+    stmt = select(Initiative).where(Initiative.author_id == chat_id).options(selectinload(Initiative.votes))
+    stmt = stmt.order_by(Initiative.created_at.desc()).limit(limit)
+    result = await db.execute(stmt)
+    return list(result.scalars().all())
+
+async def update_initiative_status_with_reason(db: AsyncSession, initiative: Initiative, status: InitiativeStatus, reject_reason: str = None):
+    """Обновить статус инициативы с причиной отклонения"""
+    initiative.status = status
+    if reject_reason is not None:
+        initiative.reject_reason = reject_reason
+    await db.flush()
+    await db.commit()
+    logger.info(f"Инициатива #{initiative.id} переведена в статус: {status.value}")

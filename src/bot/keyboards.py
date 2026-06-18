@@ -1,5 +1,25 @@
 from maxapi.types import ButtonsPayload, CallbackButton
 
+COMMANDS_HELP = (
+    "📋 Доступные команды:\n"
+    "/idea — подать инициативу\n"
+    "/list — посмотреть одобренные инициативы\n"
+    "/vote [номер] — проголосовать\n"
+    "/status — статус последней инициативы\n"
+    "/status [номер] — статус конкретной инициативы"
+)
+
+def make_commands_keyboard() -> ButtonsPayload:
+    """Инлайн-клавиатура со всеми командами бота"""
+    buttons = [
+        [CallbackButton(text="Подать инициативу", payload="cmd:/idea")],
+        [CallbackButton(text="Посмотреть одобренные инициативы", payload="cmd:/list")],
+        [CallbackButton(text="Проголосовать", payload="input:/vote")],
+        [CallbackButton(text="Статус последней вашей инициативы", payload="cmd:/status")],
+        [CallbackButton(text="Статус конкретной инициативы", payload="input:/status")],
+    ]
+    return ButtonsPayload(buttons=buttons)
+
 def make_moderation_keyboard(initiative_id: int) -> ButtonsPayload:
     """Inline-клавиатура для модератора: ✅ Одобрить / ❌ Отклонить"""
     buttons = [
