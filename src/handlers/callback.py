@@ -293,7 +293,7 @@ async def _handle_idea_confirm(callback: MessageCallback, db: AsyncSession,
         f"Вы получите уведомление о решении."
     )
     
-    await callback.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
+    await callback.message.answer("📋 Доступные команды:", attachments=[make_commands_keyboard().pack()])
     
     await notify_moderators(db, callback.bot, initiative)
     logger.info(f"[handle_idea_confirm] Инициатива #{initiative.id} уведомлена модераторов")

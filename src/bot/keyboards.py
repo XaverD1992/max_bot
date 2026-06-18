@@ -12,11 +12,11 @@ COMMANDS_HELP = (
 def make_commands_keyboard() -> ButtonsPayload:
     """Инлайн-клавиатура со всеми командами бота"""
     buttons = [
-        [CallbackButton(text="/idea — подать инициативу", payload="cmd:/idea")],
-        [CallbackButton(text="/list — посмотреть одобренные инициативы", payload="cmd:/list")],
-        [CallbackButton(text="/vote [номер] — проголосовать", payload="input:/vote")],
-        [CallbackButton(text="/status — статус последней вашей инициативы", payload="cmd:/status")],
-        [CallbackButton(text="/status [номер] — статус конкретной инициативы", payload="input:/status")],
+        [CallbackButton(text="Подать инициативу", payload="cmd:/idea")],
+        [CallbackButton(text="Посмотреть одобренные инициативы", payload="cmd:/list")],
+        [CallbackButton(text="Проголосовать", payload="input:/vote")],
+        [CallbackButton(text="Статус последней вашей инициативы", payload="cmd:/status")],
+        [CallbackButton(text="Статус конкретной инициативы", payload="input:/status")],
     ]
     return ButtonsPayload(buttons=buttons)
 

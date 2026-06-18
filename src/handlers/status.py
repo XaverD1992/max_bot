@@ -64,5 +64,5 @@ async def handle_status(event: MessageCreated, db: AsyncSession):
     lines.append(f"   👍 Голосов: {initiative.votes_count}")
     
     await event.message.answer("\n".join(lines), parse_mode=ParseMode.MARKDOWN)
-    await event.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
+    await event.message.answer("📋 Доступные команды:", attachments=[make_commands_keyboard().pack()])
     logger.info(f"[status] Инициатива #{initiative.id} пользователю {chat_id}: {status_label}")

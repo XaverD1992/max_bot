@@ -32,5 +32,5 @@ async def handle_list(event: MessageCreated, db: AsyncSession):
         )
     
     await event.message.answer("\n\n".join(lines), parse_mode=ParseMode.MARKDOWN)
-    await event.message.answer("📋 Доступные команды:", keyboard=make_commands_keyboard())
+    await event.message.answer("📋 Доступные команды:", attachments=[make_commands_keyboard().pack()])
     logger.info(f"[list] ответ отправлен пользователю {chat_id}")
